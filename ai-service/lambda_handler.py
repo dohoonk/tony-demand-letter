@@ -5,8 +5,16 @@ Handles PDF text extraction and AI-powered demand letter generation
 
 import json
 import os
+import sys
 from typing import Dict, Any
 from dotenv import load_dotenv
+
+# Add src directory to path
+sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
+
+from src.services.pdf_extractor import extract_text_from_pdf
+from src.services.s3_service import download_from_s3
+from src.services.database_service import update_pdf_extracted_text
 
 # Load environment variables
 load_dotenv()
@@ -52,14 +60,63 @@ def lambda_handler(event: Dict[str, Any], context: Any = None) -> Dict[str, Any]
 
 def handle_extract_text(payload: Dict[str, Any]) -> Dict[str, Any]:
     """Extract text from PDF"""
-    # TODO: Implement PDF text extraction
-    return {
-        'statusCode': 200,
-        'body': json.dumps({
-            'text': 'Extracted text will go here',
-            'page_count': 1,
-        })
-    }
+    try:
+        pdf_id = payload.get('pdfId')
+        s3_key = payload.get('s3Key')
+        
+        if not pdf_id or not s3_key:
+            return {
+                'statusCode': 400,
+                'body': json.dumps({
+                    'error': 'Missing pdfId or s3Key'
+                })
+            }
+        
+        # Download PDF from S3
+        print(f'Downloading PDF from S3: {s3_key}')
+        pdf_bytes = download_from_s3(s3_key)
+        
+        if not pdf_bytes:
+            return {
+                'statusCode': 500,
+                'body': json.dumps({
+                    'error': 'Failed to download PDF from S3'
+                })
+            }
+        
+        # Extract text
+        print(f'Extracting text from PDF')
+        result = extract_text_from_pdf(pdf_bytes)
+        
+        if not result['success']:
+            return {
+                'statusCode': 500,
+                'body': json.dumps({
+                    'error': result['error']
+                })
+            }
+        
+        # Update database
+        print(f'Updating database with extracted text')
+        update_pdf_extracted_text(pdf_id, result['text'], result['page_count'])
+        
+        return {
+            'statusCode': 200,
+            'body': json.dumps({
+                'success': True,
+                'text': result['text'],
+                'page_count': result['page_count'],
+            })
+        }
+        
+    except Exception as e:
+        print(f'Error extracting text: {str(e)}')
+        return {
+            'statusCode': 500,
+            'body': json.dumps({
+                'error': str(e)
+            })
+        }
 
 
 def handle_extract_facts(payload: Dict[str, Any]) -> Dict[str, Any]:
