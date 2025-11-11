@@ -1,6 +1,14 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import documentService, { Document, Pdf } from '../services/documentService'
+import api from '../services/api'
+
+interface Fact {
+  id: string
+  factText: string
+  citation: string | null
+  status: string
+}
 
 export function DocumentDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -9,13 +17,18 @@ export function DocumentDetailPage() {
   
   const [document, setDocument] = useState<Document | null>(null)
   const [pdfs, setPdfs] = useState<Pdf[]>([])
+  const [facts, setFacts] = useState<Fact[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isUploading, setIsUploading] = useState(false)
+  const [isExtractingFacts, setIsExtractingFacts] = useState(false)
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [draft, setDraft] = useState<string | null>(null)
 
   useEffect(() => {
     if (id) {
       loadDocument()
       loadPdfs()
+      loadFacts()
     }
   }, [id])
 
@@ -36,6 +49,61 @@ export function DocumentDetailPage() {
       setPdfs(pdfList)
     } catch (error) {
       console.error('Error loading PDFs:', error)
+    }
+  }
+
+  const loadFacts = async () => {
+    try {
+      const response = await api.get(`/documents/${id}/facts`)
+      setFacts(response.data.data)
+    } catch (error) {
+      console.error('Error loading facts:', error)
+    }
+  }
+
+  const handleExtractFacts = async () => {
+    setIsExtractingFacts(true)
+    try {
+      await api.post(`/documents/${id}/facts/extract`)
+      await loadFacts()
+      alert('Facts extracted successfully!')
+    } catch (error) {
+      console.error('Error extracting facts:', error)
+      alert('Error extracting facts. Please try again.')
+    } finally {
+      setIsExtractingFacts(false)
+    }
+  }
+
+  const handleApproveFact = async (factId: string) => {
+    try {
+      await api.post(`/documents/facts/${factId}/approve`)
+      await loadFacts()
+    } catch (error) {
+      console.error('Error approving fact:', error)
+    }
+  }
+
+  const handleRejectFact = async (factId: string) => {
+    try {
+      await api.post(`/documents/facts/${factId}/reject`)
+      await loadFacts()
+    } catch (error) {
+      console.error('Error rejecting fact:', error)
+    }
+  }
+
+  const handleGenerateDraft = async () => {
+    setIsGenerating(true)
+    try {
+      const response = await api.post(`/documents/${id}/generate`)
+      setDraft(response.data.data.draft)
+      alert('Draft generated successfully!')
+    } catch (error: any) {
+      console.error('Error generating draft:', error)
+      alert(error.response?.data?.error?.message || 'Error generating draft')
+    } finally {
+      setIsGenerating(false)
     }
   }
 
@@ -172,15 +240,104 @@ export function DocumentDetailPage() {
         )}
       </div>
 
-      {/* Next Steps */}
+      {/* Facts Section */}
       {pdfs.length > 0 && (
-        <div className="bg-blue-50 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-blue-900 mb-2">Next Steps</h3>
-          <ul className="space-y-2 text-blue-800">
-            <li>• Review extracted facts (coming soon)</li>
-            <li>• Apply a template (coming soon)</li>
-            <li>• Generate draft with AI (coming soon)</li>
-          </ul>
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">Extracted Facts</h2>
+            <button
+              onClick={handleExtractFacts}
+              disabled={isExtractingFacts}
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400"
+            >
+              {isExtractingFacts ? 'Extracting...' : '🤖 Extract Facts with AI'}
+            </button>
+          </div>
+
+          {facts.length === 0 ? (
+            <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
+              <p className="text-gray-600 mb-4">No facts extracted yet</p>
+              <button
+                onClick={handleExtractFacts}
+                className="text-green-600 hover:text-green-700 font-medium"
+              >
+                Extract facts from uploaded PDFs
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {facts.map((fact) => (
+                <div
+                  key={fact.id}
+                  className={`p-4 border rounded-lg ${
+                    fact.status === 'approved'
+                      ? 'border-green-200 bg-green-50'
+                      : fact.status === 'rejected'
+                      ? 'border-red-200 bg-red-50'
+                      : 'border-gray-200 bg-white'
+                  }`}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <p className="text-gray-900 flex-1">{fact.factText}</p>
+                    <div className="flex gap-2 ml-4">
+                      {fact.status === 'pending' && (
+                        <>
+                          <button
+                            onClick={() => handleApproveFact(fact.id)}
+                            className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
+                          >
+                            ✓ Approve
+                          </button>
+                          <button
+                            onClick={() => handleRejectFact(fact.id)}
+                            className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
+                          >
+                            ✗ Reject
+                          </button>
+                        </>
+                      )}
+                      {fact.status === 'approved' && (
+                        <span className="px-3 py-1 text-sm bg-green-100 text-green-800 rounded">
+                          Approved
+                        </span>
+                      )}
+                      {fact.status === 'rejected' && (
+                        <span className="px-3 py-1 text-sm bg-red-100 text-red-800 rounded">
+                          Rejected
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {fact.citation && (
+                    <p className="text-xs text-gray-500">{fact.citation}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Generate Draft Button */}
+      {facts.some(f => f.status === 'approved') && (
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <button
+            onClick={handleGenerateDraft}
+            disabled={isGenerating}
+            className="w-full px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 font-semibold"
+          >
+            {isGenerating ? 'Generating Draft...' : '✨ Generate Demand Letter Draft'}
+          </button>
+        </div>
+      )}
+
+      {/* Draft Display */}
+      {draft && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-xl font-semibold mb-4">Generated Draft</h2>
+          <div className="prose max-w-none whitespace-pre-wrap font-serif">
+            {draft}
+          </div>
         </div>
       )}
     </div>

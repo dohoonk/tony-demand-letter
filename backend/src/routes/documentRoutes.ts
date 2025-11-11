@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import documentController from '../controllers/documentController'
+import factController from '../controllers/factController'
 import { authenticate } from '../middleware/authenticate'
 import { upload } from '../middleware/upload'
 
@@ -19,6 +20,17 @@ router.delete('/:id', documentController.delete.bind(documentController))
 router.post('/:id/pdfs', upload.single('file'), documentController.uploadPdf.bind(documentController))
 router.get('/:id/pdfs', documentController.listPdfs.bind(documentController))
 router.delete('/pdfs/:id', documentController.deletePdf.bind(documentController))
+
+// Fact routes
+router.post('/:documentId/facts/extract', factController.extractFacts.bind(factController))
+router.get('/:documentId/facts', factController.listFacts.bind(factController))
+router.patch('/facts/:id', factController.updateFact.bind(factController))
+router.post('/facts/:id/approve', factController.approveFact.bind(factController))
+router.post('/facts/:id/reject', factController.rejectFact.bind(factController))
+router.delete('/facts/:id', factController.deleteFact.bind(factController))
+
+// Draft generation
+router.post('/:documentId/generate', factController.generateDraft.bind(factController))
 
 export default router
 

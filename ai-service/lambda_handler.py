@@ -121,30 +121,78 @@ def handle_extract_text(payload: Dict[str, Any]) -> Dict[str, Any]:
 
 def handle_extract_facts(payload: Dict[str, Any]) -> Dict[str, Any]:
     """Extract structured facts from text using AI"""
-    # TODO: Implement fact extraction with Anthropic API
-    return {
-        'statusCode': 200,
-        'body': json.dumps({
-            'facts': [
-                {
-                    'text': 'Sample extracted fact',
-                    'citation': 'document.pdf, page 1',
-                    'page_number': 1,
-                }
-            ]
-        })
-    }
+    try:
+        from src.services.anthropic_service import extract_facts_from_text
+        
+        document_id = payload.get('documentId')
+        pdf_text = payload.get('pdfText')
+        pdf_filename = payload.get('pdfFilename', 'document.pdf')
+        
+        if not pdf_text:
+            return {
+                'statusCode': 400,
+                'body': json.dumps({
+                    'error': 'Missing pdfText'
+                })
+            }
+        
+        # Extract facts using AI
+        print(f'Extracting facts from {pdf_filename}')
+        facts = extract_facts_from_text(pdf_text, pdf_filename)
+        
+        return {
+            'statusCode': 200,
+            'body': json.dumps({
+                'facts': facts
+            })
+        }
+    
+    except Exception as e:
+        print(f'Error extracting facts: {str(e)}')
+        return {
+            'statusCode': 500,
+            'body': json.dumps({
+                'error': str(e)
+            })
+        }
 
 
 def handle_generate_draft(payload: Dict[str, Any]) -> Dict[str, Any]:
     """Generate demand letter draft using AI"""
-    # TODO: Implement draft generation with Anthropic API
-    return {
-        'statusCode': 200,
-        'body': json.dumps({
-            'draft': 'Generated draft will go here',
-        })
-    }
+    try:
+        from src.services.anthropic_service import generate_demand_letter
+        
+        facts = payload.get('facts', [])
+        template_structure = payload.get('templateStructure', {})
+        template_content = payload.get('templateContent', '')
+        
+        if not facts:
+            return {
+                'statusCode': 400,
+                'body': json.dumps({
+                    'error': 'Missing facts'
+                })
+            }
+        
+        # Generate draft using AI
+        print(f'Generating draft with {len(facts)} facts')
+        draft = generate_demand_letter(facts, template_structure, template_content)
+        
+        return {
+            'statusCode': 200,
+            'body': json.dumps({
+                'draft': draft
+            })
+        }
+    
+    except Exception as e:
+        print(f'Error generating draft: {str(e)}')
+        return {
+            'statusCode': 500,
+            'body': json.dumps({
+                'error': str(e)
+            })
+        }
 
 
 # Local development server
