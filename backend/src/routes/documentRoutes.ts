@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import documentController from '../controllers/documentController'
 import factController from '../controllers/factController'
+import exportController from '../controllers/exportController'
 import { authenticate } from '../middleware/authenticate'
 import { upload } from '../middleware/upload'
 
@@ -31,6 +32,9 @@ router.delete('/facts/:id', factController.deleteFact.bind(factController))
 
 // Draft generation
 router.post('/:documentId/generate', factController.generateDraft.bind(factController))
+
+// Export
+router.get('/:documentId/export/docx', exportController.exportDocx.bind(exportController))
 
 export default router
 

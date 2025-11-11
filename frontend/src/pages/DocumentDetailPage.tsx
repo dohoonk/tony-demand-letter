@@ -334,7 +334,16 @@ export function DocumentDetailPage() {
       {/* Draft Display */}
       {draft && (
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">Generated Draft</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">Generated Draft</h2>
+            <a
+              href={`${import.meta.env.VITE_API_URL}/api/documents/${id}/export/docx`}
+              download
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+            >
+              📄 Export to Word
+            </a>
+          </div>
           <div className="prose max-w-none whitespace-pre-wrap font-serif">
             {draft}
           </div>
