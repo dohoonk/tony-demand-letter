@@ -4,6 +4,7 @@ import helmet from 'helmet'
 import morgan from 'morgan'
 import cookieParser from 'cookie-parser'
 import dotenv from 'dotenv'
+import routes from './routes'
 
 // Load environment variables
 dotenv.config()
@@ -31,13 +32,8 @@ app.get('/health', (req: Request, res: Response) => {
   })
 })
 
-// API routes will go here
-app.get('/api', (req: Request, res: Response) => {
-  res.json({
-    message: 'Steno Demand Letter Generator API',
-    version: '0.1.0',
-  })
-})
+// API routes
+app.use('/api', routes)
 
 // Error handling middleware
 app.use((err: Error, req: Request, res: Response, next: any) => {
