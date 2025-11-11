@@ -14,6 +14,9 @@ __pycache__/
 .env.test
 .env.production
 .env.*.local
+# BUT allow .env.example files
+!.env.example
+!**/.env.example
 
 # Build outputs
 dist/
