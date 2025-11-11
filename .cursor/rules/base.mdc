@@ -1,0 +1,214 @@
+Description: Core project rules for Steno Demand Letter Generator
+
+# Project Intelligence - Steno Demand Letter Generator
+
+## Project Identity
+- **Single-firm deployment** - No multi-tenancy complexity
+- **Microservices architecture** - React + Node.js + Python Lambda
+- **Legal document tool** - High accuracy and audit requirements
+
+## Critical Patterns
+
+### 1. Fact Approval Workflow is Sacred
+**Always remember**: Facts must be approved by humans before AI generation.
+```
+Extract Facts → Human Review (Approve/Edit/Reject) → Only Approved → AI Draft
+```
+This is the quality control mechanism that prevents hallucinations.
+
+### 2. Citations are Required
+Every extracted fact MUST include source citation:
+```typescript
+{
+  factText: "Plaintiff suffered neck injury",
+  citation: "medical_records.pdf, page 3",
+  pdfId: "uuid",
+  pageNumber: 3
+}
+```
+
+### 3. Two-Part Template System
+- **Variables**: Simple placeholders like `{{client_name}}`
+- **Paragraph Modules**: Reusable sections with tags (drag-and-drop)
+
+Don't conflate these - they serve different purposes.
+
+### 4. Audit Everything Critical
+Log these actions to `audit_logs`:
+- PDF uploads
+- Fact approvals/rejections
+- Draft generations
+- Document exports
+- User deletions
+
+### 5. Version History = Snapshots
+Not git-style diffs. Full document snapshots on each save.
+Simpler, more reliable for legal documents.
+
+## Tech Stack Reminders
+
+### Backend (Node.js + Express)
+- TypeScript required
+- Prisma or TypeORM for database
+- JWT authentication (15-min access, 7-day refresh)
+- WebSocket server for Y.js collaboration
+- Redis pub/sub for multi-instance scaling
+
+### Frontend (React + TypeScript)
+- Vite for build tool
+- TipTap for rich text editor
+- Y.js for real-time collaboration
+- Tailwind CSS for styling
+- Zustand or Context for state
+
+### AI Service (Python Lambda)
+- Anthropic API (Claude 3.5 Sonnet)
+- Multi-stage prompt pipeline
+- PyPDF2 or pdfplumber for text extraction
+- Pydantic for data validation
+
+### Database (PostgreSQL)
+- Use UUIDs for primary keys
+- Index on foreign keys and created_at
+- JSONB for flexible metadata
+- Audit logs are append-only
+
+## Code Standards
+
+### API Endpoints
+Always follow REST conventions:
+```
+GET    /api/resources       - List
+POST   /api/resources       - Create
+GET    /api/resources/:id   - Read
+PATCH  /api/resources/:id   - Update
+DELETE /api/resources/:id   - Delete
+```
+
+### Error Responses
+Consistent error format:
+```typescript
+{
+  error: {
+    code: "VALIDATION_ERROR",
+    message: "User-friendly message",
+    details: { field: "email", issue: "invalid format" }
+  }
+}
+```
+
+### Authentication
+All protected routes require JWT middleware:
+```typescript
+router.get('/api/documents', authenticate, documentController.list)
+```
+
+### Async Error Handling
+Always wrap async route handlers:
+```typescript
+const asyncHandler = (fn) => (req, res, next) =>
+  Promise.resolve(fn(req, res, next)).catch(next)
+```
+
+## Performance Targets
+- Draft generation: < 10 seconds
+- API responses: < 2 seconds (p95)
+- Database queries: < 500ms (p95)
+- WebSocket sync: < 100ms latency
+
+## Security Checklist
+- [ ] S3 encryption (SSE-KMS)
+- [ ] TLS 1.2+ in transit
+- [ ] JWT with httpOnly cookies
+- [ ] Input validation on all endpoints
+- [ ] SQL injection prevention (use parameterized queries)
+- [ ] Rate limiting on auth endpoints
+- [ ] No AI training on customer data
+
+## Common Pitfalls to Avoid
+
+### 1. Don't Skip Fact Approval
+Never auto-approve extracted facts. Human review is mandatory.
+
+### 2. Don't Block on AI Generation
+Use async/await properly. Show loading states in UI.
+
+### 3. Don't Store Credentials in Code
+Use environment variables for all secrets.
+
+### 4. Don't Ignore WebSocket Edge Cases
+Handle disconnections, reconnections, and network interruptions gracefully.
+
+### 5. Don't Forget Audit Logs
+Every sensitive action must be logged with user_id and timestamp.
+
+## File Naming Conventions
+```
+frontend/
+  src/
+    components/        # PascalCase: DocumentEditor.tsx
+    hooks/            # camelCase: useDocumentEditor.ts
+    services/         # camelCase: apiService.ts
+    types/            # PascalCase: Document.ts
+    utils/            # camelCase: formatDate.ts
+
+backend/
+  src/
+    controllers/      # camelCase: documentController.ts
+    services/         # PascalCase: DocumentService.ts
+    repositories/     # PascalCase: DocumentRepository.ts
+    middleware/       # camelCase: authenticate.ts
+    models/           # PascalCase: Document.ts
+    types/            # PascalCase: ApiResponse.ts
+
+ai-service/
+  src/
+    handlers/         # snake_case: fact_extraction.py
+    services/         # snake_case: anthropic_service.py
+    models/           # snake_case: fact_model.py
+    utils/            # snake_case: pdf_parser.py
+```
+
+## Development Workflow
+1. Create feature branch from `main`
+2. Implement with tests
+3. Run linter and formatter
+4. Update Memory Bank if architecture changes
+5. Create PR with clear description
+6. Code review
+7. Merge to `main`
+
+## Testing Requirements
+- Unit tests for business logic
+- Integration tests for API endpoints
+- E2E tests for critical user flows
+- Prompt tests with golden dataset for AI service
+
+## Deployment Checklist
+- [ ] Environment variables configured
+- [ ] Database migrations applied
+- [ ] S3 bucket permissions verified
+- [ ] Redis connection tested
+- [ ] WebSocket server running
+- [ ] Health check endpoint returns 200
+- [ ] Monitoring and alerts configured
+
+## When to Update Memory Bank
+- Significant architectural changes
+- New design patterns discovered
+- Major refactoring completed
+- Performance optimizations implemented
+- User explicitly requests: "update memory bank"
+
+## Milestone Acceptance Criteria
+Refer to `memory-bank/progress.md` for detailed checklist per milestone.
+
+## Emergency Contacts
+- Database issues: Check connection string, migration status
+- S3 access denied: Verify IAM roles and bucket policies
+- AI generation failures: Check Anthropic API key and rate limits
+- WebSocket problems: Verify Redis connection and pub/sub channels
+
+---
+
+**Remember**: This is a legal tool. Accuracy, auditability, and security are paramount.

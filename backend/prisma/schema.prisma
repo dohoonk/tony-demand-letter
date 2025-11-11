@@ -1,0 +1,172 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  passwordHash  String   @map("password_hash")
+  firstName     String?  @map("first_name")
+  lastName      String?  @map("last_name")
+  role          String   @default("attorney") // attorney, paralegal, viewer
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  documentsCreated   Document[]        @relation("DocumentCreator")
+  factsReviewed      Fact[]            @relation("FactReviewer")
+  templatesCreated   Template[]        @relation("TemplateCreator")
+  paragraphsCreated  ParagraphModule[] @relation("ParagraphCreator")
+  versionsCreated    DocumentVersion[] @relation("VersionCreator")
+  auditLogs          AuditLog[]
+
+  @@map("users")
+}
+
+model Document {
+  id          String   @id @default(uuid())
+  title       String
+  createdById String   @map("created_by")
+  templateId  String?  @map("template_id")
+  status      String   @default("draft") // draft, in_review, finalized
+  content     Json?    // Y.js document state or rich text
+  metadata    Json?    // Case details, variables
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  createdBy User              @relation("DocumentCreator", fields: [createdById], references: [id])
+  template  Template?         @relation(fields: [templateId], references: [id])
+  pdfs      Pdf[]
+  facts     Fact[]
+  versions  DocumentVersion[]
+  auditLogs AuditLog[]
+
+  @@index([createdById])
+  @@index([status])
+  @@map("documents")
+}
+
+model Pdf {
+  id            String   @id @default(uuid())
+  documentId    String   @map("document_id")
+  filename      String
+  s3Key         String   @map("s3_key")
+  fileSizeBytes BigInt   @map("file_size_bytes")
+  mimeType      String   @map("mime_type")
+  extractedText String?  @map("extracted_text") @db.Text
+  pageCount     Int?     @map("page_count")
+  uploadedById  String   @map("uploaded_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  uploadedBy User     @relation("DocumentCreator", fields: [uploadedById], references: [id])
+  facts      Fact[]
+
+  @@index([documentId])
+  @@map("pdfs")
+}
+
+model Fact {
+  id           String    @id @default(uuid())
+  documentId   String    @map("document_id")
+  pdfId        String?   @map("pdf_id")
+  factText     String    @map("fact_text") @db.Text
+  citation     String?   // "police_report.pdf, page 3"
+  pageNumber   Int?      @map("page_number")
+  status       String    @default("pending") // pending, approved, rejected, edited
+  originalText String?   @map("original_text") @db.Text
+  reviewedById String?   @map("reviewed_by")
+  reviewedAt   DateTime? @map("reviewed_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  pdf        Pdf?     @relation(fields: [pdfId], references: [id])
+  reviewedBy User?    @relation("FactReviewer", fields: [reviewedById], references: [id])
+
+  @@index([documentId])
+  @@index([status])
+  @@map("facts")
+}
+
+model Template {
+  id          String   @id @default(uuid())
+  name        String
+  description String?  @db.Text
+  category    String? // e.g., "Personal Injury", "Contract Dispute"
+  structure   Json // Template structure with placeholders
+  variables   Json? // [{name: "client_name", type: "text", required: true}]
+  createdById String   @map("created_by")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  createdBy         User              @relation("TemplateCreator", fields: [createdById], references: [id])
+  documents         Document[]
+  paragraphModules  ParagraphModule[]
+
+  @@map("templates")
+}
+
+model ParagraphModule {
+  id           String   @id @default(uuid())
+  templateId   String?  @map("template_id")
+  title        String
+  content      String   @db.Text
+  tags         String[] // For filtering/search
+  positionHint String?  @map("position_hint") // early, middle, late
+  createdById  String   @map("created_by")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  template  Template? @relation(fields: [templateId], references: [id])
+  createdBy User      @relation("ParagraphCreator", fields: [createdById], references: [id])
+
+  @@index([templateId])
+  @@map("paragraph_modules")
+}
+
+model DocumentVersion {
+  id            String   @id @default(uuid())
+  documentId    String   @map("document_id")
+  versionNumber Int      @map("version_number")
+  content       Json // Full document snapshot
+  createdById   String   @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  document  Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  createdBy User     @relation("VersionCreator", fields: [createdById], references: [id])
+
+  @@index([documentId, versionNumber(sort: Desc)])
+  @@map("document_versions")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?  @map("user_id")
+  documentId String?  @map("document_id")
+  action     String // uploaded_pdf, approved_fact, generated_draft, exported
+  metadata   Json? // Additional context
+  ipAddress  String?  @map("ip_address")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user     User?     @relation(fields: [userId], references: [id])
+  document Document? @relation(fields: [documentId], references: [id])
+
+  @@index([documentId])
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+  @@map("audit_logs")
+}
+
