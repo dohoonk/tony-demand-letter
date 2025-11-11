@@ -5,6 +5,8 @@ import { RegisterPage } from './pages/RegisterPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { DocumentsPage } from './pages/DocumentsPage'
 import { DocumentDetailPage } from './pages/DocumentDetailPage'
+import { TemplatesPage } from './pages/TemplatesPage'
+import { TemplateDetailPage } from './pages/TemplateDetailPage'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { Layout } from './components/Layout'
 
@@ -25,6 +27,8 @@ function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/documents" element={<DocumentsPage />} />
           <Route path="/documents/:id" element={<DocumentDetailPage />} />
+          <Route path="/templates" element={<TemplatesPage />} />
+          <Route path="/templates/:id" element={<TemplateDetailPage />} />
         </Route>
       </Routes>
     </Router>
