@@ -12,9 +12,12 @@
     "test:coverage": "vitest --coverage"
   },
   "dependencies": {
+    "@tiptap/extension-placeholder": "^3.10.6",
+    "@tiptap/extension-text-align": "^3.10.6",
+    "@tiptap/extension-underline": "^3.10.6",
     "@tiptap/pm": "^2.1.13",
-    "@tiptap/react": "^2.1.13",
-    "@tiptap/starter-kit": "^2.1.13",
+    "@tiptap/react": "^2.27.1",
+    "@tiptap/starter-kit": "^2.27.1",
     "axios": "^1.6.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

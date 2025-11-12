@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import socketService from '../services/socketService'
 import useAuth from '../hooks/useAuth'
+import { RichTextEditor } from './RichTextEditor'
 
 interface DraftEditorProps {
   initialContent: string
@@ -140,15 +141,14 @@ export function DraftEditor({ initialContent, documentId, onSave, onCancel }: Dr
         </div>
       )}
       
-      <textarea
-        value={content}
-        onChange={(e) => handleContentChange(e.target.value)}
-        className="w-full h-[600px] p-4 border border-gray-300 rounded-md font-serif text-base leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500"
-        placeholder="Edit your demand letter here..."
+      <RichTextEditor
+        content={content}
+        onChange={handleContentChange}
+        placeholder="Start writing your demand letter..."
       />
       
       <div className="flex justify-between items-center text-sm text-gray-500">
-        <span>{content.length} characters</span>
+        <span className="text-gray-400">Rich text editor with real-time collaboration</span>
         {isConnected ? (
           <span className="text-green-600">✓ Changes synced</span>
         ) : (
