@@ -19,6 +19,7 @@ model User {
 
   // Relations
   documentsCreated   Document[]        @relation("DocumentCreator")
+  pdfsUploaded       Pdf[]             @relation("PdfUploader")
   factsReviewed      Fact[]            @relation("FactReviewer")
   templatesCreated   Template[]        @relation("TemplateCreator")
   paragraphsCreated  ParagraphModule[] @relation("ParagraphCreator")
@@ -66,7 +67,7 @@ model Pdf {
 
   // Relations
   document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  uploadedBy User     @relation("DocumentCreator", fields: [uploadedById], references: [id])
+  uploadedBy User     @relation("PdfUploader", fields: [uploadedById], references: [id])
   facts      Fact[]
 
   @@index([documentId])
