@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import documentService, { Document, Pdf } from '../services/documentService'
+import templateService, { Template } from '../services/templateService'
 import api from '../services/api'
 
 interface Fact {
@@ -18,17 +19,20 @@ export function DocumentDetailPage() {
   const [document, setDocument] = useState<Document | null>(null)
   const [pdfs, setPdfs] = useState<Pdf[]>([])
   const [facts, setFacts] = useState<Fact[]>([])
+  const [templates, setTemplates] = useState<Template[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isUploading, setIsUploading] = useState(false)
   const [isExtractingFacts, setIsExtractingFacts] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [draft, setDraft] = useState<string | null>(null)
+  const [showTemplateSelect, setShowTemplateSelect] = useState(false)
 
   useEffect(() => {
     if (id) {
       loadDocument()
       loadPdfs()
       loadFacts()
+      loadTemplates()
     }
   }, [id])
 
@@ -36,11 +40,39 @@ export function DocumentDetailPage() {
     try {
       const doc = await documentService.getDocument(id!)
       setDocument(doc)
+      // Load existing draft if available
+      if (doc.content) {
+        // Handle both string and structured content formats
+        if (typeof doc.content === 'string') {
+          setDraft(doc.content)
+        } else if (typeof doc.content === 'object' && doc.content.type === 'doc') {
+          // Extract text from TipTap-style structured content
+          const text = extractTextFromContent(doc.content)
+          setDraft(text)
+        }
+      }
     } catch (error) {
       console.error('Error loading document:', error)
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const extractTextFromContent = (content: any): string => {
+    if (typeof content === 'string') return content
+    if (!content || !content.content) return ''
+    
+    let text = ''
+    for (const node of content.content) {
+      if (node.type === 'paragraph' && node.content) {
+        for (const child of node.content) {
+          if (child.type === 'text' && child.text) {
+            text += child.text + '\n'
+          }
+        }
+      }
+    }
+    return text.trim()
   }
 
   const loadPdfs = async () => {
@@ -58,6 +90,27 @@ export function DocumentDetailPage() {
       setFacts(response.data.data)
     } catch (error) {
       console.error('Error loading facts:', error)
+    }
+  }
+
+  const loadTemplates = async () => {
+    try {
+      const templateList = await templateService.listTemplates()
+      setTemplates(templateList.filter(t => t.isActive))
+    } catch (error) {
+      console.error('Error loading templates:', error)
+    }
+  }
+
+  const handleApplyTemplate = async (templateId: string) => {
+    try {
+      await documentService.updateDocument(id!, { templateId })
+      await loadDocument()
+      setShowTemplateSelect(false)
+      alert('Template applied successfully! Now generate your draft to use this template.')
+    } catch (error) {
+      console.error('Error applying template:', error)
+      alert('Error applying template. Please try again.')
     }
   }
 
@@ -97,13 +150,39 @@ export function DocumentDetailPage() {
     setIsGenerating(true)
     try {
       const response = await api.post(`/documents/${id}/generate`)
-      setDraft(response.data.data.draft)
+      const draftData = response.data.data.draft
+      
+      // Handle both string and object responses
+      if (typeof draftData === 'string') {
+        setDraft(draftData)
+      } else if (typeof draftData === 'object') {
+        // If it's a structured object, extract the text
+        const text = extractTextFromContent(draftData)
+        setDraft(text)
+      }
+      
       alert('Draft generated successfully!')
     } catch (error: any) {
       console.error('Error generating draft:', error)
       alert(error.response?.data?.error?.message || 'Error generating draft')
     } finally {
       setIsGenerating(false)
+    }
+  }
+
+  const handleSaveDraft = async () => {
+    if (!draft) return
+    
+    try {
+      await documentService.updateDocument(id!, {
+        content: draft,
+        status: 'draft'
+      })
+      await loadDocument()
+      alert('Draft saved to document successfully!')
+    } catch (error) {
+      console.error('Error saving draft:', error)
+      alert('Error saving draft. Please try again.')
     }
   }
 
@@ -170,11 +249,66 @@ export function DocumentDetailPage() {
         >
           ← Back to Documents
         </button>
-        <h1 className="text-3xl font-bold text-gray-900">{document.title}</h1>
-        <p className="text-gray-600 mt-2">
-          Created {new Date(document.createdAt).toLocaleDateString()}
-        </p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">{document.title}</h1>
+            <p className="text-gray-600 mt-2">
+              Created {new Date(document.createdAt).toLocaleDateString()}
+            </p>
+          </div>
+          <button
+            onClick={() => setShowTemplateSelect(!showTemplateSelect)}
+            className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+          >
+            📋 {document.templateId ? 'Change Template' : 'Apply Template'}
+          </button>
+        </div>
       </div>
+
+      {/* Template Selection */}
+      {showTemplateSelect && (
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <h2 className="text-xl font-semibold mb-4">Select a Template</h2>
+          {templates.length === 0 ? (
+            <p className="text-gray-600">
+              No templates available. Create a template first.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {templates.map((template) => (
+                <div
+                  key={template.id}
+                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
+                >
+                  <div>
+                    <h3 className="font-medium text-gray-900">{template.name}</h3>
+                    {template.description && (
+                      <p className="text-sm text-gray-600 mt-1">{template.description}</p>
+                    )}
+                    {template.category && (
+                      <span className="inline-block mt-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
+                        {template.category}
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => handleApplyTemplate(template.id)}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+                  >
+                    Apply
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <button
+            onClick={() => setShowTemplateSelect(false)}
+            className="mt-4 text-gray-600 hover:text-gray-700"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
 
       {/* PDF Upload Section */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">
@@ -335,16 +469,29 @@ export function DocumentDetailPage() {
       {draft && (
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Generated Draft</h2>
-            <a
-              href={`${import.meta.env.VITE_API_URL}/api/documents/${id}/export/docx`}
-              download
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-            >
-              📄 Export to Word
-            </a>
+            <div>
+              <h2 className="text-xl font-semibold">Demand Letter Draft</h2>
+              {document?.content && (
+                <p className="text-sm text-gray-600 mt-1">✓ Saved version available</p>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={handleSaveDraft}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                💾 Save to Document
+              </button>
+              <a
+                href={`${import.meta.env.VITE_API_URL}/api/documents/${id}/export/docx`}
+                download
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+              >
+                📄 Export to Word
+              </a>
+            </div>
           </div>
-          <div className="prose max-w-none whitespace-pre-wrap font-serif">
+          <div className="prose max-w-none whitespace-pre-wrap font-serif border-t pt-4">
             {draft}
           </div>
         </div>

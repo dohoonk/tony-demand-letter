@@ -4,6 +4,8 @@ export interface Document {
   id: string
   title: string
   status: string
+  content?: string | any | null
+  templateId?: string | null
   createdAt: string
   createdBy: any
   _count?: {

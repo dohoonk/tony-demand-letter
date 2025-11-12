@@ -65,7 +65,14 @@ class DocumentService {
       throw new Error('Document not found')
     }
 
-    return document
+    // Convert BigInt to Number for JSON serialization
+    return {
+      ...document,
+      pdfs: document.pdfs.map(pdf => ({
+        ...pdf,
+        fileSizeBytes: Number(pdf.fileSizeBytes),
+      })),
+    }
   }
 
   async listDocuments(userId: string) {
@@ -172,7 +179,11 @@ class DocumentService {
       },
     })
 
-    return pdf
+    // Convert BigInt to Number for JSON serialization
+    return {
+      ...pdf,
+      fileSizeBytes: Number(pdf.fileSizeBytes),
+    }
   }
 
   async listPdfs(documentId: string) {
@@ -192,7 +203,11 @@ class DocumentService {
       },
     })
 
-    return pdfs
+    // Convert BigInt to Number for JSON serialization
+    return pdfs.map(pdf => ({
+      ...pdf,
+      fileSizeBytes: Number(pdf.fileSizeBytes),
+    }))
   }
 
   async deletePdf(id: string, userId: string) {

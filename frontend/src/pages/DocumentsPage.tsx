@@ -9,16 +9,20 @@ export function DocumentsPage() {
   const [newTitle, setNewTitle] = useState('')
 
   useEffect(() => {
+    console.log('[DocumentsPage] useEffect: mounting, calling loadDocuments()')
     loadDocuments()
   }, [])
 
   const loadDocuments = async () => {
+    console.log('[DocumentsPage] loadDocuments: start')
     try {
       const docs = await documentService.listDocuments()
+      console.log('[DocumentsPage] loadDocuments: success', { count: docs.length })
       setDocuments(docs)
     } catch (error) {
       console.error('Error loading documents:', error)
     } finally {
+      console.log('[DocumentsPage] loadDocuments: finished')
       setIsLoading(false)
     }
   }

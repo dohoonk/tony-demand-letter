@@ -54,7 +54,7 @@ Extract 10-20 key facts. Be specific and accurate."""
 
     try:
         message = client.messages.create(
-            model=os.getenv('ANTHROPIC_MODEL', 'claude-3-5-sonnet-20241022'),
+            model=os.getenv('ANTHROPIC_MODEL', 'claude-haiku-4-5-20251001'),
             max_tokens=2000,
             messages=[
                 {"role": "user", "content": prompt}
@@ -120,7 +120,7 @@ Write a complete demand letter. Make it persuasive and professional."""
 
     try:
         message = client.messages.create(
-            model=os.getenv('ANTHROPIC_MODEL', 'claude-3-5-sonnet-20241022'),
+            model=os.getenv('ANTHROPIC_MODEL', 'claude-haiku-4-5-20251001'),
             max_tokens=4000,
             messages=[
                 {"role": "user", "content": prompt}

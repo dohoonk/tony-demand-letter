@@ -7,13 +7,16 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading, fetchUser } = useAuth()
+  const isAuthenticated = useAuth((state) => state.isAuthenticated)
+  const isLoading = useAuth((state) => state.isLoading)
+  const user = useAuth((state) => state.user)
+  const fetchUser = useAuth((state) => state.fetchUser)
 
   useEffect(() => {
-    if (isAuthenticated && !useAuth.getState().user) {
+    if (isAuthenticated && !user && !isLoading) {
       fetchUser()
     }
-  }, [isAuthenticated, fetchUser])
+  }, [isAuthenticated, user, isLoading, fetchUser])
 
   if (isLoading) {
     return (

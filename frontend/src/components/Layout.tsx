@@ -1,15 +1,10 @@
-import { useEffect } from 'react'
 import { useNavigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 
 export function Layout() {
-  const { user, logout, fetchUser } = useAuth()
+  const { user, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-
-  useEffect(() => {
-    fetchUser()
-  }, [fetchUser])
 
   const handleLogout = async () => {
     await logout()

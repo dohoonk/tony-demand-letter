@@ -102,7 +102,6 @@ JWT_REFRESH_SECRET=dev-refresh-secret-change-in-production
 JWT_ACCESS_EXPIRATION=15m
 JWT_REFRESH_EXPIRATION=7d
 AWS_REGION=us-east-1
-S3_BUCKET_NAME=demand-letters-pdfs-local
 CORS_ORIGIN=http://localhost:5173
 AI_SERVICE_URL=http://localhost:8000
 EOF
