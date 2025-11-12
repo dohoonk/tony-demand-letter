@@ -35,15 +35,15 @@ export function DraftEditor({ initialContent, documentId, onSave, onCancel }: Dr
 
     // Join document room
     const userName = `${user.firstName || 'User'} ${user.lastName || ''}`
-    socketService.joinDocument(documentId, user.userId, userName)
+    socketService.joinDocument(documentId, user.id, userName)
 
     // Listen for other users
     socketService.onUsersList((users) => {
-      setActiveUsers(users.filter(u => u.userId !== user.userId))
+      setActiveUsers(users.filter(u => u.userId !== user.id))
     })
 
     socketService.onUserJoined((data) => {
-      if (data.userId !== user.userId) {
+      if (data.userId !== user.id) {
         setActiveUsers(prev => [...prev, data])
       }
     })
@@ -54,7 +54,7 @@ export function DraftEditor({ initialContent, documentId, onSave, onCancel }: Dr
 
     // Listen for document updates from others
     socketService.onDocumentUpdated((data) => {
-      if (data.userId !== user.userId) {
+      if (data.userId !== user.id) {
         setContent(data.content)
         contentRef.current = data.content
       }
@@ -77,7 +77,7 @@ export function DraftEditor({ initialContent, documentId, onSave, onCancel }: Dr
     
     // Broadcast change to other users
     if (user) {
-      socketService.sendDocumentUpdate(documentId, newContent, user.userId)
+      socketService.sendDocumentUpdate(documentId, newContent, user.id)
     }
   }
 
