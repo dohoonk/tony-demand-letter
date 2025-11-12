@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import socketService from '../services/socketService'
 import { useAuth } from '../hooks/useAuth'
 import { RichTextEditor } from './RichTextEditor'
+import { CollaborativeCursor } from './CollaborativeCursor'
 
 interface DraftEditorProps {
   initialContent: string
@@ -15,12 +16,37 @@ interface ActiveUser {
   userName: string
 }
 
+interface CursorPosition {
+  userId: string
+  userName: string
+  position: { top: number; left: number }
+  color: string
+}
+
+// Generate consistent color for a user ID
+const getUserColor = (userId: string): string => {
+  const colors = [
+    '#3B82F6', // blue
+    '#EF4444', // red
+    '#10B981', // green
+    '#F59E0B', // amber
+    '#8B5CF6', // purple
+    '#EC4899', // pink
+    '#14B8A6', // teal
+    '#F97316', // orange
+  ]
+  const hash = userId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+  return colors[hash % colors.length]
+}
+
 export function DraftEditor({ initialContent, documentId, onSave, onCancel }: DraftEditorProps) {
   const [content, setContent] = useState(initialContent)
   const [isSaving, setIsSaving] = useState(false)
   const [activeUsers, setActiveUsers] = useState<ActiveUser[]>([])
   const [isConnected, setIsConnected] = useState(false)
+  const [cursorPositions, setCursorPositions] = useState<CursorPosition[]>([])
   const contentRef = useRef(content)
+  const editorRef = useRef<HTMLDivElement>(null)
   const { user } = useAuth()
 
   // Initialize WebSocket connection
@@ -60,6 +86,24 @@ export function DraftEditor({ initialContent, documentId, onSave, onCancel }: Dr
       }
     })
 
+    // Listen for cursor movements from others
+    socketService.onCursorMoved((data) => {
+      if (data.userId !== user.id) {
+        setCursorPositions(prev => {
+          const filtered = prev.filter(c => c.userId !== data.userId)
+          return [
+            ...filtered,
+            {
+              userId: data.userId,
+              userName: data.userName,
+              position: { top: data.position, left: 0 }, // Simplified positioning
+              color: getUserColor(data.userId),
+            },
+          ]
+        })
+      }
+    })
+
     // Cleanup
     return () => {
       socketService.leaveDocument(documentId)
@@ -78,6 +122,13 @@ export function DraftEditor({ initialContent, documentId, onSave, onCancel }: Dr
     // Broadcast change to other users
     if (user) {
       socketService.sendDocumentUpdate(documentId, newContent, user.id)
+    }
+  }
+
+  const handleCursorChange = (position: number) => {
+    // Send cursor position to other users
+    if (user) {
+      socketService.sendCursorUpdate(documentId, position)
     }
   }
 
@@ -130,10 +181,20 @@ export function DraftEditor({ initialContent, documentId, onSave, onCancel }: Dr
           <div className="flex items-center gap-2 text-sm">
             <span className="font-medium text-blue-900">Currently editing:</span>
             <div className="flex gap-2">
-              {activeUsers.map((user, index) => (
-                <span key={index} className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                  <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                  {user.userName}
+              {activeUsers.map((activeUser, index) => (
+                <span 
+                  key={index} 
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs"
+                  style={{
+                    backgroundColor: `${getUserColor(activeUser.userId)}20`,
+                    color: getUserColor(activeUser.userId),
+                  }}
+                >
+                  <span 
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: getUserColor(activeUser.userId) }}
+                  ></span>
+                  {activeUser.userName}
                 </span>
               ))}
             </div>
@@ -141,11 +202,24 @@ export function DraftEditor({ initialContent, documentId, onSave, onCancel }: Dr
         </div>
       )}
       
-      <RichTextEditor
-        content={content}
-        onChange={handleContentChange}
-        placeholder="Start writing your demand letter..."
-      />
+      <div ref={editorRef} className="relative">
+        {/* Collaborative Cursors */}
+        {cursorPositions.map((cursor) => (
+          <CollaborativeCursor
+            key={cursor.userId}
+            userName={cursor.userName}
+            color={cursor.color}
+            position={cursor.position}
+          />
+        ))}
+        
+        <RichTextEditor
+          content={content}
+          onChange={handleContentChange}
+          onCursorChange={handleCursorChange}
+          placeholder="Start writing your demand letter..."
+        />
+      </div>
       
       <div className="flex justify-between items-center text-sm text-gray-500">
         <span className="text-gray-400">Rich text editor with real-time collaboration</span>

@@ -9,10 +9,11 @@ import { ensureHtmlFormat } from '../utils/textConverter'
 interface RichTextEditorProps {
   content: string
   onChange: (content: string) => void
+  onCursorChange?: (position: number) => void
   placeholder?: string
 }
 
-export function RichTextEditor({ content, onChange, placeholder }: RichTextEditorProps) {
+export function RichTextEditor({ content, onChange, onCursorChange, placeholder }: RichTextEditorProps) {
   // Convert plain text to HTML if needed
   const htmlContent = useMemo(() => ensureHtmlFormat(content), [content])
 
@@ -36,12 +37,19 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
       const html = editor.getHTML()
       onChange(html)
     },
+    onSelectionUpdate: ({ editor }) => {
+      // Send cursor position updates
+      if (onCursorChange) {
+        const { from } = editor.state.selection
+        onCursorChange(from)
+      }
+    },
     editorProps: {
       attributes: {
         class: 'prose prose-sm max-w-none focus:outline-none min-h-[500px] p-4',
       },
     },
-  })
+  }, [onCursorChange])
 
   // Update editor content when prop changes (for collaborative editing)
   useEffect(() => {
