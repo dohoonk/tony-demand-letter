@@ -1,4 +1,4 @@
-import prisma from '../lib/prisma'
+import prisma from '../config/database'
 
 class VersionService {
   async createVersion(documentId: string, content: any, userId: string, note?: string) {
