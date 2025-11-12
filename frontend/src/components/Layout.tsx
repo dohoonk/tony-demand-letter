@@ -1,5 +1,7 @@
 import { useNavigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { Button } from './ui/button'
+import { FileText, LayoutTemplate, Settings, LogOut, User } from 'lucide-react'
 
 export function Layout() {
   const { user, logout } = useAuth()
@@ -14,67 +16,72 @@ export function Layout() {
   const isActive = (path: string) => location.pathname.startsWith(path)
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <h1
-              onClick={() => navigate('/documents')}
-              className="text-2xl font-bold text-gray-900 cursor-pointer hover:text-gray-700"
-            >
-              Steno
-            </h1>
-            <nav className="flex gap-6">
-              <button
-                onClick={() => navigate('/documents')}
-                className={`text-sm font-medium ${
-                  isActive('/documents')
-                    ? 'text-blue-600 border-b-2 border-blue-600'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Documents
-              </button>
-              <button
-                onClick={() => navigate('/templates')}
-                className={`text-sm font-medium ${
-                  isActive('/templates')
-                    ? 'text-blue-600 border-b-2 border-blue-600'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Templates
-              </button>
-              <button
-                onClick={() => navigate('/settings/firm')}
-                className={`text-sm font-medium ${
-                  isActive('/settings')
-                    ? 'text-blue-600 border-b-2 border-blue-600'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Settings
-              </button>
-            </nav>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-700">
-                {user?.firstName} {user?.lastName}
-                <span className="ml-2 text-xs text-gray-500">({user?.role})</span>
-              </span>
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
-              >
-                Logout
-              </button>
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container max-w-7xl mx-auto flex h-16 items-center justify-between px-4">
+          <div
+            onClick={() => navigate('/documents')}
+            className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+          >
+            <div className="flex items-center justify-center w-8 h-8 bg-primary text-primary-foreground rounded-md">
+              <FileText className="h-5 w-5" />
             </div>
+            <span className="font-bold text-xl tracking-tight">Steno</span>
+          </div>
+
+          <nav className="flex items-center gap-1">
+            <Button
+              variant={isActive('/documents') ? 'secondary' : 'ghost'}
+              onClick={() => navigate('/documents')}
+              className="gap-2"
+            >
+              <FileText className="h-4 w-4" />
+              Documents
+            </Button>
+            <Button
+              variant={isActive('/templates') ? 'secondary' : 'ghost'}
+              onClick={() => navigate('/templates')}
+              className="gap-2"
+            >
+              <LayoutTemplate className="h-4 w-4" />
+              Templates
+            </Button>
+            <Button
+              variant={isActive('/settings') ? 'secondary' : 'ghost'}
+              onClick={() => navigate('/settings/firm')}
+              className="gap-2"
+            >
+              <Settings className="h-4 w-4" />
+              Settings
+            </Button>
+          </nav>
+
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted text-sm">
+              <User className="h-4 w-4" />
+              <span className="font-medium">
+                {user?.firstName} {user?.lastName}
+              </span>
+              <span className="text-xs text-muted-foreground px-1.5 py-0.5 rounded bg-background">
+                {user?.role}
+              </span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              className="gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </Button>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main>
+      <main className="min-h-[calc(100vh-4rem)]">
         <Outlet />
       </main>
     </div>

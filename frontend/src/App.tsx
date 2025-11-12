@@ -10,10 +10,12 @@ import { TemplateDetailPage } from './pages/TemplateDetailPage'
 import { FirmSettingsPage } from './pages/FirmSettingsPage'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { Layout } from './components/Layout'
+import { Toaster } from './components/ui/toaster'
 
 function App() {
   return (
     <Router>
+      <Toaster />
       <Routes>
         <Route path="/" element={<Navigate to="/documents" replace />} />
         <Route path="/login" element={<LoginPage />} />

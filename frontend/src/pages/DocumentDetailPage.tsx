@@ -7,6 +7,12 @@ import { VersionHistory } from '../components/VersionHistory'
 import { CollaboratorManagement } from '../components/CollaboratorManagement'
 import api from '../services/api'
 import { ensureHtmlFormat } from '../utils/textConverter'
+import { Button } from '../components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
+import { Skeleton } from '../components/ui/skeleton'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../components/ui/alert-dialog'
+import { toast } from 'sonner'
+import { ArrowLeft, Upload, FileText, Sparkles, Save, Download, Edit, History, Users, FileCheck, X, CheckCircle, XCircle, Layout } from 'lucide-react'
 
 interface Fact {
   id: string
@@ -126,10 +132,10 @@ export function DocumentDetailPage() {
       await documentService.updateDocument(id!, { templateId })
       await loadDocument()
       setShowTemplateSelect(false)
-      alert('Template applied successfully! Now generate your draft to use this template.')
+      toast.success('Template applied successfully! Generate your draft to use this template.')
     } catch (error) {
       console.error('Error applying template:', error)
-      alert('Error applying template. Please try again.')
+      toast.error('Failed to apply template. Please try again.')
     }
   }
 
@@ -138,10 +144,10 @@ export function DocumentDetailPage() {
     try {
       await api.post(`/documents/${id}/facts/extract`)
       await loadFacts()
-      alert('Facts extracted successfully!')
+      toast.success('Facts extracted successfully!')
     } catch (error) {
       console.error('Error extracting facts:', error)
-      alert('Error extracting facts. Please try again.')
+      toast.error('Failed to extract facts. Please try again.')
     } finally {
       setIsExtractingFacts(false)
     }
@@ -180,10 +186,10 @@ export function DocumentDetailPage() {
         setDraft(ensureHtmlFormat(text))
       }
       
-      alert('Draft generated successfully!')
+      toast.success('Draft generated successfully!')
     } catch (error: any) {
       console.error('Error generating draft:', error)
-      alert(error.response?.data?.error?.message || 'Error generating draft')
+      toast.error(error.response?.data?.error?.message || 'Failed to generate draft')
     } finally {
       setIsGenerating(false)
     }
@@ -206,10 +212,10 @@ export function DocumentDetailPage() {
       })
       
       await loadDocument()
-      alert('Draft saved and version created successfully!')
+      toast.success('Draft saved and version created successfully!')
     } catch (error) {
       console.error('Error saving draft:', error)
-      alert('Error saving draft. Please try again.')
+      toast.error('Failed to save draft. Please try again.')
     }
   }
 
@@ -242,12 +248,12 @@ export function DocumentDetailPage() {
         console.error('Error blob text:', text)
         try {
           const errorData = JSON.parse(text)
-          alert(errorData.error?.message || 'Error exporting document')
+          toast.error(errorData.error?.message || 'Error exporting document')
         } catch {
-          alert('Error exporting document: ' + text)
+          toast.error('Error exporting document: ' + text)
         }
       } else {
-        alert(error.response?.data?.error?.message || error.message || 'Error exporting document')
+        toast.error(error.response?.data?.error?.message || error.message || 'Error exporting document')
       }
     }
   }
@@ -302,20 +308,20 @@ export function DocumentDetailPage() {
       }
     } catch (error) {
       console.error('Error uploading PDFs:', error)
-      alert('Error uploading PDF. Please try again.')
+      toast.error('Failed to upload PDF. Please try again.')
     } finally {
       setIsUploading(false)
     }
   }
 
   const handleDeletePdf = async (pdfId: string) => {
-    if (!confirm('Are you sure you want to delete this PDF?')) return
-
     try {
       await documentService.deletePdf(pdfId)
       await loadPdfs()
+      toast.success('PDF deleted successfully')
     } catch (error) {
       console.error('Error deleting PDF:', error)
+      toast.error('Failed to delete PDF')
     }
   }
 
@@ -327,95 +333,131 @@ export function DocumentDetailPage() {
   }
 
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>
+    return (
+      <div className="container max-w-7xl mx-auto px-4 py-8">
+        <Skeleton className="h-8 w-32 mb-8" />
+        <div className="space-y-6">
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-64 w-full" />
+          <Skeleton className="h-64 w-full" />
+        </div>
+      </div>
+    )
   }
 
   if (!document) {
-    return <div className="flex items-center justify-center min-h-screen">Document not found</div>
+    return (
+      <div className="container max-w-7xl mx-auto px-4 py-8">
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <FileText className="h-16 w-16 text-muted-foreground mb-4" />
+            <CardTitle className="mb-2">Document not found</CardTitle>
+            <CardDescription>The document you're looking for doesn't exist or you don't have access to it.</CardDescription>
+            <Button className="mt-6" onClick={() => navigate('/documents')}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Documents
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="container max-w-7xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
-        <button
+        <Button
+          variant="ghost"
           onClick={() => navigate('/documents')}
-          className="text-blue-600 hover:text-blue-700 mb-4"
+          className="mb-4 -ml-2"
         >
-          ← Back to Documents
-        </button>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Documents
+        </Button>
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">{document.title}</h1>
-            <p className="text-gray-600 mt-2">
-              Created {new Date(document.createdAt).toLocaleDateString()}
+            <h1 className="text-3xl font-bold tracking-tight">{document.title}</h1>
+            <p className="text-muted-foreground mt-2 flex items-center gap-3">
+              <span>Created {new Date(document.createdAt).toLocaleDateString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric'
+              })}</span>
               {userPermission && (
-                <span className="ml-3 px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">
+                <span className="px-2.5 py-0.5 text-xs font-semibold bg-primary/10 text-primary rounded-full">
                   {userPermission}
                 </span>
               )}
             </p>
           </div>
           <div className="flex gap-2">
-            <button
+            <Button
+              variant="outline"
               onClick={() => setShowCollaborators(!showCollaborators)}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
             >
-              👥 Manage Collaborators
-            </button>
-            <button
+              <Users className="mr-2 h-4 w-4" />
+              Manage Collaborators
+            </Button>
+            <Button
+              variant="outline"
               onClick={() => setShowTemplateSelect(!showTemplateSelect)}
-              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
             >
-              📋 {document.templateId ? 'Change Template' : 'Apply Template'}
-            </button>
+              <Layout className="mr-2 h-4 w-4" />
+              {document.templateId ? 'Change Template' : 'Apply Template'}
+            </Button>
           </div>
         </div>
       </div>
 
       {/* Template Selection */}
       {showTemplateSelect && (
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">Select a Template</h2>
-          {templates.length === 0 ? (
-            <p className="text-gray-600">
-              No templates available. Create a template first.
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {templates.map((template) => (
-                <div
-                  key={template.id}
-                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
-                >
-                  <div>
-                    <h3 className="font-medium text-gray-900">{template.name}</h3>
-                    {template.description && (
-                      <p className="text-sm text-gray-600 mt-1">{template.description}</p>
-                    )}
-                    {template.category && (
-                      <span className="inline-block mt-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
-                        {template.category}
-                      </span>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => handleApplyTemplate(template.id)}
-                    className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Select a Template</CardTitle>
+            <CardDescription>
+              Choose a template to structure your demand letter
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {templates.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">
+                No templates available. Create a template first.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {templates.map((template) => (
+                  <div
+                    key={template.id}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent transition-colors"
                   >
-                    Apply
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-          <button
-            onClick={() => setShowTemplateSelect(false)}
-            className="mt-4 text-gray-600 hover:text-gray-700"
-          >
-            Cancel
-          </button>
-        </div>
+                    <div>
+                      <h3 className="font-medium">{template.name}</h3>
+                      {template.description && (
+                        <p className="text-sm text-muted-foreground mt-1">{template.description}</p>
+                      )}
+                      {template.category && (
+                        <span className="inline-block mt-2 px-2 py-1 text-xs bg-primary/10 text-primary rounded-md">
+                          {template.category}
+                        </span>
+                      )}
+                    </div>
+                    <Button onClick={() => handleApplyTemplate(template.id)}>
+                      Apply
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <Button
+              variant="ghost"
+              onClick={() => setShowTemplateSelect(false)}
+              className="mt-4"
+            >
+              Cancel
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
       {/* Collaborator Management */}
@@ -424,220 +466,278 @@ export function DocumentDetailPage() {
       )}
 
       {/* PDF Upload Section */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Case Documents</h2>
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isUploading}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
-          >
-            {isUploading ? 'Uploading...' : '+ Upload PDF'}
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/pdf"
-            multiple
-            onChange={handleFileUpload}
-            className="hidden"
-          />
-        </div>
-
-        {pdfs.length === 0 ? (
-          <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
-            <p className="text-gray-600 mb-4">No PDFs uploaded yet</p>
-            <button
+      <Card className="mb-6">
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>Case Documents</CardTitle>
+              <CardDescription>Upload PDF files containing case information</CardDescription>
+            </div>
+            <Button
               onClick={() => fileInputRef.current?.click()}
-              className="text-blue-600 hover:text-blue-700 font-medium"
+              disabled={isUploading}
             >
-              Upload your first PDF
-            </button>
+              <Upload className="mr-2 h-4 w-4" />
+              {isUploading ? 'Uploading...' : 'Upload PDF'}
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/pdf"
+              multiple
+              onChange={handleFileUpload}
+              className="hidden"
+            />
           </div>
-        ) : (
-          <div className="space-y-2">
-            {pdfs.map((pdf) => (
-              <div
-                key={pdf.id}
-                className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
+        </CardHeader>
+        <CardContent>
+          {pdfs.length === 0 ? (
+            <div className="text-center py-12 border-2 border-dashed rounded-lg">
+              <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground mb-4">No PDFs uploaded yet</p>
+              <Button
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
               >
-                <div className="flex items-center gap-3">
-                  <div className="text-red-600">
-                    <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M4 18h12V6h-4V2H4v16zm-2 1V0h10l4 4v16H2v-1z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">{pdf.filename}</p>
-                    <p className="text-sm text-gray-500">
-                      {formatFileSize(pdf.fileSizeBytes)}
-                      {pdf.pageCount && ` • ${pdf.pageCount} pages`}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleDeletePdf(pdf.id)}
-                  className="text-red-600 hover:text-red-700 text-sm font-medium"
-                >
-                  Delete
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Facts Section */}
-      {pdfs.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Extracted Facts</h2>
-            <button
-              onClick={handleExtractFacts}
-              disabled={isExtractingFacts}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400"
-            >
-              {isExtractingFacts ? 'Extracting...' : '🤖 Extract Facts with AI'}
-            </button>
-          </div>
-
-          {facts.length === 0 ? (
-            <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
-              <p className="text-gray-600 mb-4">No facts extracted yet</p>
-              <button
-                onClick={handleExtractFacts}
-                className="text-green-600 hover:text-green-700 font-medium"
-              >
-                Extract facts from uploaded PDFs
-              </button>
+                <Upload className="mr-2 h-4 w-4" />
+                Upload your first PDF
+              </Button>
             </div>
           ) : (
-            <div className="space-y-3">
-              {facts.map((fact) => (
+            <div className="space-y-2">
+              {pdfs.map((pdf) => (
                 <div
-                  key={fact.id}
-                  className={`p-4 border rounded-lg ${
-                    fact.status === 'approved'
-                      ? 'border-green-200 bg-green-50'
-                      : fact.status === 'rejected'
-                      ? 'border-red-200 bg-red-50'
-                      : 'border-gray-200 bg-white'
-                  }`}
+                  key={pdf.id}
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent transition-colors"
                 >
-                  <div className="flex justify-between items-start mb-2">
-                    <p className="text-gray-900 flex-1">{fact.factText}</p>
-                    <div className="flex gap-2 ml-4">
-                      {fact.status === 'pending' && (
-                        <>
-                          <button
-                            onClick={() => handleApproveFact(fact.id)}
-                            className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
-                          >
-                            ✓ Approve
-                          </button>
-                          <button
-                            onClick={() => handleRejectFact(fact.id)}
-                            className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
-                          >
-                            ✗ Reject
-                          </button>
-                        </>
-                      )}
-                      {fact.status === 'approved' && (
-                        <span className="px-3 py-1 text-sm bg-green-100 text-green-800 rounded">
-                          Approved
-                        </span>
-                      )}
-                      {fact.status === 'rejected' && (
-                        <span className="px-3 py-1 text-sm bg-red-100 text-red-800 rounded">
-                          Rejected
-                        </span>
-                      )}
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-8 w-8 text-destructive" />
+                    <div>
+                      <p className="font-medium">{pdf.filename}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {formatFileSize(pdf.fileSizeBytes)}
+                        {pdf.pageCount && ` • ${pdf.pageCount} pages`}
+                      </p>
                     </div>
                   </div>
-                  {fact.citation && (
-                    <p className="text-xs text-gray-500">{fact.citation}</p>
-                  )}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete PDF?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete "{pdf.filename}"? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDeletePdf(pdf.id)}>
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </CardContent>
+      </Card>
+
+      {/* Facts Section */}
+      {pdfs.length > 0 && (
+        <Card className="mb-6">
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle>Extracted Facts</CardTitle>
+                <CardDescription>AI-extracted facts from your case documents</CardDescription>
+              </div>
+              <Button
+                onClick={handleExtractFacts}
+                disabled={isExtractingFacts}
+              >
+                <Sparkles className="mr-2 h-4 w-4" />
+                {isExtractingFacts ? 'Extracting...' : 'Extract Facts with AI'}
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {facts.length === 0 ? (
+              <div className="text-center py-12 border-2 border-dashed rounded-lg">
+                <Sparkles className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground mb-4">No facts extracted yet</p>
+                <Button
+                  variant="outline"
+                  onClick={handleExtractFacts}
+                >
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Extract facts from uploaded PDFs
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {facts.map((fact) => (
+                  <div
+                    key={fact.id}
+                    className={`p-4 border rounded-lg ${
+                      fact.status === 'approved'
+                        ? 'border-green-200 bg-green-50 dark:bg-green-950'
+                        : fact.status === 'rejected'
+                        ? 'border-red-200 bg-red-50 dark:bg-red-950'
+                        : 'bg-card'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <p className="flex-1">{fact.factText}</p>
+                      <div className="flex gap-2 ml-4">
+                        {fact.status === 'pending' && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="default"
+                              onClick={() => handleApproveFact(fact.id)}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              <CheckCircle className="mr-1 h-3 w-3" />
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleRejectFact(fact.id)}
+                            >
+                              <XCircle className="mr-1 h-3 w-3" />
+                              Reject
+                            </Button>
+                          </>
+                        )}
+                        {fact.status === 'approved' && (
+                          <span className="px-3 py-1 text-sm bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 rounded-md flex items-center gap-1">
+                            <CheckCircle className="h-3 w-3" />
+                            Approved
+                          </span>
+                        )}
+                        {fact.status === 'rejected' && (
+                          <span className="px-3 py-1 text-sm bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100 rounded-md flex items-center gap-1">
+                            <XCircle className="h-3 w-3" />
+                            Rejected
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {fact.citation && (
+                      <p className="text-xs text-muted-foreground">{fact.citation}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {/* Generate Draft Button */}
       {facts.some(f => f.status === 'approved') && (
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <button
-            onClick={handleGenerateDraft}
-            disabled={isGenerating}
-            className="w-full px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 font-semibold"
-          >
-            {isGenerating ? 'Generating Draft...' : '✨ Generate Demand Letter Draft'}
-          </button>
-        </div>
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <Button
+              onClick={handleGenerateDraft}
+              disabled={isGenerating}
+              className="w-full h-12 text-base"
+              size="lg"
+            >
+              <Sparkles className="mr-2 h-5 w-5" />
+              {isGenerating ? 'Generating Draft...' : 'Generate Demand Letter Draft'}
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
       {/* Draft Display */}
       {draft && (
-        <div className="bg-white rounded-lg shadow p-6">
+        <Card>
           {isEditing ? (
-            <DraftEditor
-              initialContent={draft}
-              documentId={id!}
-              onSave={handleSaveFromEditor}
-              onCancel={() => setIsEditing(false)}
-            />
+            <CardContent className="p-0">
+              <DraftEditor
+                initialContent={draft}
+                documentId={id!}
+                onSave={handleSaveFromEditor}
+                onCancel={() => setIsEditing(false)}
+              />
+            </CardContent>
           ) : (
             <>
-              <div className="flex justify-between items-center mb-4">
-                <div>
-                  <h2 className="text-xl font-semibold">Demand Letter Draft</h2>
-                  {document?.content && (
-                    <p className="text-sm text-gray-600 mt-1">✓ Saved version available</p>
-                  )}
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Demand Letter Draft</CardTitle>
+                    {document?.content && (
+                      <CardDescription className="flex items-center gap-1 mt-1">
+                        <FileCheck className="h-4 w-4" />
+                        Saved version available
+                      </CardDescription>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowVersionHistory(!showVersionHistory)}
+                    >
+                      <History className="mr-2 h-4 w-4" />
+                      Version History
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsEditing(true)}
+                    >
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit Draft
+                    </Button>
+                    <Button
+                      variant="default"
+                      onClick={handleSaveDraft}
+                    >
+                      <Save className="mr-2 h-4 w-4" />
+                      Save to Document
+                    </Button>
+                    <Button
+                      variant="default"
+                      onClick={handleExportDocx}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Export to Word
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setShowVersionHistory(!showVersionHistory)}
-                    className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
-                  >
-                    📜 Version History
-                  </button>
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
-                  >
-                    ✏️ Edit Draft
-                  </button>
-                  <button
-                    onClick={handleSaveDraft}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                  >
-                    💾 Save to Document
-                  </button>
-                  <button
-                    onClick={handleExportDocx}
-                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                  >
-                    📄 Export to Word
-                  </button>
-                </div>
-              </div>
-              <div 
-                className="prose max-w-none font-serif border-t pt-4"
-                dangerouslySetInnerHTML={{ __html: draft }}
-              />
+              </CardHeader>
+              <CardContent>
+                <div 
+                  className="prose prose-slate max-w-none font-serif"
+                  dangerouslySetInnerHTML={{ __html: draft }}
+                />
+              </CardContent>
             </>
           )}
-        </div>
+        </Card>
       )}
 
       {/* Version History */}
       {showVersionHistory && draft && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <VersionHistory documentId={id!} onRestore={handleVersionRestore} />
-        </div>
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Version History</CardTitle>
+            <CardDescription>View and restore previous versions of your draft</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <VersionHistory documentId={id!} onRestore={handleVersionRestore} />
+          </CardContent>
+        </Card>
       )}
     </div>
   )
