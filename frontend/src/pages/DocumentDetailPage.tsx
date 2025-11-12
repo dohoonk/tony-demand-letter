@@ -5,6 +5,7 @@ import templateService, { Template } from '../services/templateService'
 import { DraftEditor } from '../components/DraftEditor'
 import { VersionHistory } from '../components/VersionHistory'
 import api from '../services/api'
+import { ensureHtmlFormat } from '../utils/textConverter'
 
 interface Fact {
   id: string
@@ -48,11 +49,12 @@ export function DocumentDetailPage() {
       if (doc.content) {
         // Handle both string and structured content formats
         if (typeof doc.content === 'string') {
-          setDraft(doc.content)
+          // Ensure content is in HTML format (convert plain text if needed)
+          setDraft(ensureHtmlFormat(doc.content))
         } else if (typeof doc.content === 'object' && doc.content.type === 'doc') {
           // Extract text from TipTap-style structured content
           const text = extractTextFromContent(doc.content)
-          setDraft(text)
+          setDraft(ensureHtmlFormat(text))
         }
       }
     } catch (error) {
@@ -156,13 +158,13 @@ export function DocumentDetailPage() {
       const response = await api.post(`/documents/${id}/generate`)
       const draftData = response.data.data.draft
       
-      // Handle both string and object responses
+      // Handle both string and object responses, always convert to HTML
       if (typeof draftData === 'string') {
-        setDraft(draftData)
+        setDraft(ensureHtmlFormat(draftData))
       } else if (typeof draftData === 'object') {
-        // If it's a structured object, extract the text
+        // If it's a structured object, extract the text and convert to HTML
         const text = extractTextFromContent(draftData)
-        setDraft(text)
+        setDraft(ensureHtmlFormat(text))
       }
       
       alert('Draft generated successfully!')
@@ -553,9 +555,10 @@ export function DocumentDetailPage() {
                   </a>
                 </div>
               </div>
-              <div className="prose max-w-none whitespace-pre-wrap font-serif border-t pt-4">
-                {draft}
-              </div>
+              <div 
+                className="prose max-w-none font-serif border-t pt-4"
+                dangerouslySetInnerHTML={{ __html: draft }}
+              />
             </>
           )}
         </div>
