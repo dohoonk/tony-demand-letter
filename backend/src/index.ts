@@ -4,12 +4,15 @@ import helmet from 'helmet'
 import morgan from 'morgan'
 import cookieParser from 'cookie-parser'
 import dotenv from 'dotenv'
+import http from 'http'
 import routes from './routes'
+import SocketService from './services/SocketService'
 
 // Load environment variables
 dotenv.config()
 
 const app: Express = express()
+const server = http.createServer(app)
 const PORT = process.env.PORT || 3000
 
 // CORS configuration
@@ -52,8 +55,11 @@ app.use((err: Error, req: Request, res: Response, next: any) => {
   })
 })
 
+// Initialize WebSocket server
+SocketService.initialize(server)
+
 // Start server
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`)
   console.log(`📝 Health check: http://localhost:${PORT}/health`)
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`)
