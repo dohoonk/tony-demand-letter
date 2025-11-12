@@ -12,12 +12,16 @@ dotenv.config()
 const app: Express = express()
 const PORT = process.env.PORT || 3000
 
-// Middleware
-app.use(helmet())
+// CORS configuration
+const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:5173'
+console.log('🔒 CORS Origin configured:', corsOrigin)
+
+// Middleware (CORS must be before helmet to avoid conflicts)
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  origin: corsOrigin,
   credentials: true,
 }))
+app.use(helmet())
 app.use(morgan('dev'))
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
