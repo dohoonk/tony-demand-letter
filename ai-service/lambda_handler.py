@@ -165,6 +165,7 @@ def handle_generate_draft(payload: Dict[str, Any]) -> Dict[str, Any]:
         facts = payload.get('facts', [])
         template_structure = payload.get('templateStructure', {})
         template_content = payload.get('templateContent', '')
+        firm_info = payload.get('firmInfo')
         
         if not facts:
             return {
@@ -176,7 +177,9 @@ def handle_generate_draft(payload: Dict[str, Any]) -> Dict[str, Any]:
         
         # Generate draft using AI
         print(f'Generating draft with {len(facts)} facts')
-        draft = generate_demand_letter(facts, template_structure, template_content)
+        if firm_info:
+            print(f'Using firm info: {firm_info.get("firmName", "N/A")}')
+        draft = generate_demand_letter(facts, template_structure, template_content, firm_info)
         
         return {
             'statusCode': 200,

@@ -46,6 +46,16 @@ export function Layout() {
               >
                 Templates
               </button>
+              <button
+                onClick={() => navigate('/settings/firm')}
+                className={`text-sm font-medium ${
+                  isActive('/settings')
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Settings
+              </button>
             </nav>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-700">

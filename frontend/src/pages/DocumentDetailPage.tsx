@@ -213,6 +213,45 @@ export function DocumentDetailPage() {
     }
   }
 
+  const handleExportDocx = async () => {
+    try {
+      const response = await api.get(`/documents/${id}/export/docx`, {
+        responseType: 'blob',
+      })
+
+      // Create a blob URL and trigger download
+      const blob = new Blob([response.data], {
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      })
+      const url = window.URL.createObjectURL(blob)
+      const link = window.document.createElement('a')
+      link.href = url
+      link.download = `${document?.title || 'demand-letter'}.docx`
+      window.document.body.appendChild(link)
+      link.click()
+      window.document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    } catch (error: any) {
+      console.error('Error exporting document:', error)
+      console.error('Error response:', error.response)
+      console.error('Error data:', error.response?.data)
+      
+      // If the error response is a blob, try to read it as text
+      if (error.response?.data instanceof Blob) {
+        const text = await error.response.data.text()
+        console.error('Error blob text:', text)
+        try {
+          const errorData = JSON.parse(text)
+          alert(errorData.error?.message || 'Error exporting document')
+        } catch {
+          alert('Error exporting document: ' + text)
+        }
+      } else {
+        alert(error.response?.data?.error?.message || error.message || 'Error exporting document')
+      }
+    }
+  }
+
   const handleSaveFromEditor = async (content: string) => {
     try {
       // Update document
@@ -577,13 +616,12 @@ export function DocumentDetailPage() {
                   >
                     💾 Save to Document
                   </button>
-                  <a
-                    href={`${import.meta.env.VITE_API_URL}/api/documents/${id}/export/docx`}
-                    download
+                  <button
+                    onClick={handleExportDocx}
                     className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
                   >
                     📄 Export to Word
-                  </a>
+                  </button>
                 </div>
               </div>
               <div 

@@ -159,6 +159,11 @@ class FactService {
       },
     })
 
+    // Get firm settings for letterhead
+    const firmSettings = await prisma.firmSettings.findUnique({
+      where: { id: 1 },
+    })
+
     // Call AI service to generate draft
     const aiServiceUrl = process.env.AI_SERVICE_URL || 'http://localhost:8000'
     
@@ -171,6 +176,15 @@ class FactService {
         })),
         templateStructure: document?.template?.structure || {},
         templateContent: document?.template?.name || '',
+        firmInfo: firmSettings ? {
+          firmName: firmSettings.firmName,
+          address: firmSettings.address,
+          city: firmSettings.city,
+          state: firmSettings.state,
+          zipCode: firmSettings.zipCode,
+          phone: firmSettings.phone,
+          email: firmSettings.email,
+        } : null,
       },
     })
 

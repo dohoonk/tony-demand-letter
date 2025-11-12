@@ -87,7 +87,7 @@ Extract 10-20 key facts. Be specific and accurate."""
         return []
 
 
-def generate_demand_letter(facts: List[Dict], template_structure: Dict, template_content: str) -> str:
+def generate_demand_letter(facts: List[Dict], template_structure: Dict, template_content: str, firm_info: Dict = None) -> str:
     """
     Generate demand letter draft using Claude
     
@@ -95,28 +95,42 @@ def generate_demand_letter(facts: List[Dict], template_structure: Dict, template
         facts: List of approved facts
         template_structure: Template structure with placeholders
         template_content: Template paragraph content
+        firm_info: Law firm contact information (optional)
         
     Returns:
         Generated demand letter text
     """
     facts_text = "\n".join([f"- {fact['factText']}" for fact in facts])
     
+    # Build firm info section
+    firm_section = ""
+    if firm_info:
+        firm_section = f"""
+
+LAW FIRM INFORMATION (use this in the letterhead):
+Firm Name: {firm_info.get('firmName', 'Your Law Firm Name')}
+Address: {firm_info.get('address', '123 Legal Street, Suite 100')}
+City, State ZIP: {firm_info.get('city', 'City')}, {firm_info.get('state', 'ST')} {firm_info.get('zipCode', '00000')}
+Phone: {firm_info.get('phone', '(555) 123-4567')}
+Email: {firm_info.get('email', 'contact@lawfirm.com')}"""
+    
     prompt = f"""You are a legal assistant drafting a professional demand letter.
 
 Using the following approved facts, draft a compelling demand letter:
 
 FACTS:
-{facts_text}
+{facts_text}{firm_section}
 
 INSTRUCTIONS:
-1. Use a professional, firm but respectful tone
-2. Clearly establish liability
-3. Detail all injuries and damages
-4. Demand fair compensation
-5. Include a reasonable deadline for response (typically 30 days)
-6. Use proper legal letter format
+1. Start with a proper letterhead using the law firm information above (if provided)
+2. Use a professional, firm but respectful tone
+3. Clearly establish liability
+4. Detail all injuries and damages
+5. Demand fair compensation
+6. Include a reasonable deadline for response (typically 30 days)
+7. Use proper legal letter format
 
-Write a complete demand letter. Make it persuasive and professional."""
+Write a complete demand letter with the firm's actual information (not placeholders). Make it persuasive and professional."""
 
     try:
         message = client.messages.create(

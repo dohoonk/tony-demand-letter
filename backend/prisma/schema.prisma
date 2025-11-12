@@ -197,3 +197,17 @@ model AuditLog {
   @@index([createdAt(sort: Desc)])
   @@map("audit_logs")
 }
+
+model FirmSettings {
+  id        Int      @id @default(1)
+  firmName  String   @map("firm_name")
+  address   String
+  city      String
+  state     String
+  zipCode   String   @map("zip_code")
+  phone     String
+  email     String
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("firm_settings")
+}

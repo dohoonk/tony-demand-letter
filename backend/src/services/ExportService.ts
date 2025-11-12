@@ -2,6 +2,22 @@ import { Document, Packer, Paragraph, TextRun, AlignmentType } from 'docx'
 import prisma from '../config/database'
 
 class ExportService {
+  // Helper to strip HTML tags and convert to plain text
+  private stripHtmlTags(html: string): string {
+    return html
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>/gi, '\n')
+      .replace(/<\/h[1-6]>/gi, '\n')
+      .replace(/<\/div>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .trim()
+  }
+
   async exportToDocx(documentId: string): Promise<Buffer> {
     // Get document
     const document = await prisma.document.findUnique({
@@ -12,11 +28,29 @@ class ExportService {
       throw new Error('Document not found')
     }
 
-    // Get content
-    const content = document.content as any
-    const draftText = typeof content === 'string' 
-      ? content 
-      : content?.draft || 'No content'
+    // Get firm settings
+    const firmSettings = await prisma.firmSettings.findUnique({
+      where: { id: 1 },
+    })
+
+    // Get content - handle both string and structured content
+    let draftText = 'No content'
+    
+    if (typeof document.content === 'string') {
+      // If it's HTML, strip tags
+      if (document.content.includes('<')) {
+        draftText = this.stripHtmlTags(document.content)
+      } else {
+        draftText = document.content
+      }
+    } else if (document.content && typeof document.content === 'object') {
+      const content = document.content as any
+      if (content.draft) {
+        draftText = typeof content.draft === 'string' 
+          ? (content.draft.includes('<') ? this.stripHtmlTags(content.draft) : content.draft)
+          : 'No content'
+      }
+    }
 
     // Split into paragraphs
     const paragraphs = draftText.split('\n').map((line: string) => 
@@ -34,12 +68,21 @@ class ExportService {
       })
     )
 
-    // Create letterhead
+    // Create letterhead using firm settings or defaults
+    const firmName = firmSettings?.firmName || 'LAW FIRM NAME'
+    const address = firmSettings?.address || '123 Legal Street, Suite 100'
+    const cityStateZip = firmSettings 
+      ? `${firmSettings.city}, ${firmSettings.state} ${firmSettings.zipCode}` 
+      : 'City, State 12345'
+    const contactInfo = firmSettings
+      ? `Phone: ${firmSettings.phone} | Email: ${firmSettings.email}`
+      : 'Phone: (555) 123-4567'
+
     const letterhead = [
       new Paragraph({
         children: [
           new TextRun({
-            text: 'LAW FIRM NAME',
+            text: firmName,
             font: 'Times New Roman',
             size: 28,
             bold: true,
@@ -51,7 +94,7 @@ class ExportService {
       new Paragraph({
         children: [
           new TextRun({
-            text: '123 Legal Street, Suite 100',
+            text: address,
             font: 'Times New Roman',
             size: 20,
           }),
@@ -62,7 +105,7 @@ class ExportService {
       new Paragraph({
         children: [
           new TextRun({
-            text: 'City, State 12345 | Phone: (555) 123-4567',
+            text: `${cityStateZip} | ${contactInfo}`,
             font: 'Times New Roman',
             size: 20,
           }),
