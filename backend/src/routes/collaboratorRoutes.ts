@@ -1,11 +1,11 @@
 import { Router } from 'express'
-import { authenticateToken } from '../middleware/auth'
+import { authenticate } from '../middleware/authenticate'
 import * as collaboratorController from '../controllers/collaboratorController'
 
 const router = Router()
 
 // All routes require authentication
-router.use(authenticateToken)
+router.use(authenticate)
 
 // Invitation management
 router.get('/invitations/pending', collaboratorController.getPendingInvitations)
