@@ -4,9 +4,10 @@ interface DraftEditorProps {
   initialContent: string
   documentId: string
   onSave: (content: string) => void
+  onCancel?: () => void
 }
 
-export function DraftEditor({ initialContent, documentId, onSave }: DraftEditorProps) {
+export function DraftEditor({ initialContent, documentId, onSave, onCancel }: DraftEditorProps) {
   const [content, setContent] = useState(initialContent)
   const [isSaving, setIsSaving] = useState(false)
 
@@ -26,13 +27,23 @@ export function DraftEditor({ initialContent, documentId, onSave }: DraftEditorP
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Edit Draft</h2>
-        <button
-          onClick={handleSave}
-          disabled={isSaving}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
-        >
-          {isSaving ? 'Saving...' : '💾 Save Draft'}
-        </button>
+        <div className="flex gap-3">
+          {onCancel && (
+            <button
+              onClick={onCancel}
+              className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+            >
+              Cancel
+            </button>
+          )}
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+          >
+            {isSaving ? 'Saving...' : '💾 Save Draft'}
+          </button>
+        </div>
       </div>
       
       <textarea

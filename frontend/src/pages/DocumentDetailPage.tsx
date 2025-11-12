@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import documentService, { Document, Pdf } from '../services/documentService'
 import templateService, { Template } from '../services/templateService'
+import { DraftEditor } from '../components/DraftEditor'
 import api from '../services/api'
 
 interface Fact {
@@ -26,6 +27,7 @@ export function DocumentDetailPage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [draft, setDraft] = useState<string | null>(null)
   const [showTemplateSelect, setShowTemplateSelect] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
 
   useEffect(() => {
     if (id) {
@@ -183,6 +185,21 @@ export function DocumentDetailPage() {
     } catch (error) {
       console.error('Error saving draft:', error)
       alert('Error saving draft. Please try again.')
+    }
+  }
+
+  const handleSaveFromEditor = async (content: string) => {
+    try {
+      await documentService.updateDocument(id!, {
+        content,
+        status: 'draft'
+      })
+      setDraft(content)
+      setIsEditing(false)
+      await loadDocument()
+    } catch (error) {
+      console.error('Error saving from editor:', error)
+      throw error
     }
   }
 
@@ -468,32 +485,49 @@ export function DocumentDetailPage() {
       {/* Draft Display */}
       {draft && (
         <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <h2 className="text-xl font-semibold">Demand Letter Draft</h2>
-              {document?.content && (
-                <p className="text-sm text-gray-600 mt-1">✓ Saved version available</p>
-              )}
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={handleSaveDraft}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-              >
-                💾 Save to Document
-              </button>
-              <a
-                href={`${import.meta.env.VITE_API_URL}/api/documents/${id}/export/docx`}
-                download
-                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-              >
-                📄 Export to Word
-              </a>
-            </div>
-          </div>
-          <div className="prose max-w-none whitespace-pre-wrap font-serif border-t pt-4">
-            {draft}
-          </div>
+          {isEditing ? (
+            <DraftEditor
+              initialContent={draft}
+              documentId={id!}
+              onSave={handleSaveFromEditor}
+              onCancel={() => setIsEditing(false)}
+            />
+          ) : (
+            <>
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <h2 className="text-xl font-semibold">Demand Letter Draft</h2>
+                  {document?.content && (
+                    <p className="text-sm text-gray-600 mt-1">✓ Saved version available</p>
+                  )}
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+                  >
+                    ✏️ Edit Draft
+                  </button>
+                  <button
+                    onClick={handleSaveDraft}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  >
+                    💾 Save to Document
+                  </button>
+                  <a
+                    href={`${import.meta.env.VITE_API_URL}/api/documents/${id}/export/docx`}
+                    download
+                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                  >
+                    📄 Export to Word
+                  </a>
+                </div>
+              </div>
+              <div className="prose max-w-none whitespace-pre-wrap font-serif border-t pt-4">
+                {draft}
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>
