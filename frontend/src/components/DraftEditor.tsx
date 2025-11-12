@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import socketService from '../services/socketService'
 import { useAuth } from '../hooks/useAuth'
 import { RichTextEditor } from './RichTextEditor'
-import { CollaborativeCursor } from './CollaborativeCursor'
 
 interface DraftEditorProps {
   initialContent: string
@@ -14,13 +13,6 @@ interface DraftEditorProps {
 interface ActiveUser {
   userId: string
   userName: string
-}
-
-interface CursorPosition {
-  userId: string
-  userName: string
-  position: { top: number; left: number }
-  color: string
 }
 
 // Generate consistent color for a user ID
@@ -44,9 +36,7 @@ export function DraftEditor({ initialContent, documentId, onSave, onCancel }: Dr
   const [isSaving, setIsSaving] = useState(false)
   const [activeUsers, setActiveUsers] = useState<ActiveUser[]>([])
   const [isConnected, setIsConnected] = useState(false)
-  const [cursorPositions, setCursorPositions] = useState<CursorPosition[]>([])
   const contentRef = useRef(content)
-  const editorRef = useRef<HTMLDivElement>(null)
   const { user } = useAuth()
 
   // Initialize WebSocket connection
@@ -86,24 +76,6 @@ export function DraftEditor({ initialContent, documentId, onSave, onCancel }: Dr
       }
     })
 
-    // Listen for cursor movements from others
-    socketService.onCursorMoved((data) => {
-      if (data.userId !== user.id) {
-        setCursorPositions(prev => {
-          const filtered = prev.filter(c => c.userId !== data.userId)
-          return [
-            ...filtered,
-            {
-              userId: data.userId,
-              userName: data.userName,
-              position: { top: data.position, left: 0 }, // Simplified positioning
-              color: getUserColor(data.userId),
-            },
-          ]
-        })
-      }
-    })
-
     // Cleanup
     return () => {
       socketService.leaveDocument(documentId)
@@ -122,13 +94,6 @@ export function DraftEditor({ initialContent, documentId, onSave, onCancel }: Dr
     // Broadcast change to other users
     if (user) {
       socketService.sendDocumentUpdate(documentId, newContent, user.id)
-    }
-  }
-
-  const handleCursorChange = (position: number) => {
-    // Send cursor position to other users
-    if (user) {
-      socketService.sendCursorUpdate(documentId, position)
     }
   }
 
@@ -202,24 +167,11 @@ export function DraftEditor({ initialContent, documentId, onSave, onCancel }: Dr
         </div>
       )}
       
-      <div ref={editorRef} className="relative">
-        {/* Collaborative Cursors */}
-        {cursorPositions.map((cursor) => (
-          <CollaborativeCursor
-            key={cursor.userId}
-            userName={cursor.userName}
-            color={cursor.color}
-            position={cursor.position}
-          />
-        ))}
-        
-        <RichTextEditor
-          content={content}
-          onChange={handleContentChange}
-          onCursorChange={handleCursorChange}
-          placeholder="Start writing your demand letter..."
-        />
-      </div>
+      <RichTextEditor
+        content={content}
+        onChange={handleContentChange}
+        placeholder="Start writing your demand letter..."
+      />
       
       <div className="flex justify-between items-center text-sm text-gray-500">
         <span className="text-gray-400">Rich text editor with real-time collaboration</span>
