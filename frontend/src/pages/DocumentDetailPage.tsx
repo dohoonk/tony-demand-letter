@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import documentService, { Document, Pdf } from '../services/documentService'
 import templateService, { Template } from '../services/templateService'
 import { DraftEditor } from '../components/DraftEditor'
+import { VersionHistory } from '../components/VersionHistory'
 import api from '../services/api'
 
 interface Fact {
@@ -28,6 +29,7 @@ export function DocumentDetailPage() {
   const [draft, setDraft] = useState<string | null>(null)
   const [showTemplateSelect, setShowTemplateSelect] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
+  const [showVersionHistory, setShowVersionHistory] = useState(false)
 
   useEffect(() => {
     if (id) {
@@ -176,12 +178,20 @@ export function DocumentDetailPage() {
     if (!draft) return
     
     try {
+      // Update document
       await documentService.updateDocument(id!, {
         content: draft,
         status: 'draft'
       })
+      
+      // Create version
+      await api.post(`/documents/${id}/versions`, {
+        content: draft,
+        note: 'Manual save'
+      })
+      
       await loadDocument()
-      alert('Draft saved to document successfully!')
+      alert('Draft saved and version created successfully!')
     } catch (error) {
       console.error('Error saving draft:', error)
       alert('Error saving draft. Please try again.')
@@ -190,10 +200,18 @@ export function DocumentDetailPage() {
 
   const handleSaveFromEditor = async (content: string) => {
     try {
+      // Update document
       await documentService.updateDocument(id!, {
         content,
         status: 'draft'
       })
+      
+      // Create version
+      await api.post(`/documents/${id}/versions`, {
+        content,
+        note: 'Saved from editor'
+      })
+      
       setDraft(content)
       setIsEditing(false)
       await loadDocument()
@@ -201,6 +219,12 @@ export function DocumentDetailPage() {
       console.error('Error saving from editor:', error)
       throw error
     }
+  }
+
+  const handleVersionRestore = () => {
+    // Reload document to get the restored content
+    loadDocument()
+    setIsEditing(false)
   }
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -503,6 +527,12 @@ export function DocumentDetailPage() {
                 </div>
                 <div className="flex gap-3">
                   <button
+                    onClick={() => setShowVersionHistory(!showVersionHistory)}
+                    className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+                  >
+                    📜 Version History
+                  </button>
+                  <button
                     onClick={() => setIsEditing(true)}
                     className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
                   >
@@ -528,6 +558,13 @@ export function DocumentDetailPage() {
               </div>
             </>
           )}
+        </div>
+      )}
+
+      {/* Version History */}
+      {showVersionHistory && draft && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <VersionHistory documentId={id!} onRestore={handleVersionRestore} />
         </div>
       )}
     </div>

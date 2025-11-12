@@ -2,6 +2,7 @@ import { Router } from 'express'
 import documentController from '../controllers/documentController'
 import factController from '../controllers/factController'
 import exportController from '../controllers/exportController'
+import versionController from '../controllers/versionController'
 import { authenticate } from '../middleware/authenticate'
 import { upload } from '../middleware/upload'
 
@@ -35,6 +36,13 @@ router.post('/:documentId/generate', factController.generateDraft.bind(factContr
 
 // Export
 router.get('/:documentId/export/docx', exportController.exportDocx.bind(exportController))
+
+// Version history
+router.post('/:documentId/versions', versionController.createVersion.bind(versionController))
+router.get('/:documentId/versions', versionController.listVersions.bind(versionController))
+router.get('/:documentId/versions/:versionId', versionController.getVersion.bind(versionController))
+router.post('/:documentId/versions/:versionId/restore', versionController.restoreVersion.bind(versionController))
+router.delete('/:documentId/versions/:versionId', versionController.deleteVersion.bind(versionController))
 
 export default router
 
