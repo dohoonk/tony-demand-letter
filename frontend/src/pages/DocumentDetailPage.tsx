@@ -4,6 +4,7 @@ import documentService, { Document, Pdf } from '../services/documentService'
 import templateService, { Template } from '../services/templateService'
 import { DraftEditor } from '../components/DraftEditor'
 import { VersionHistory } from '../components/VersionHistory'
+import { CollaboratorManagement } from '../components/CollaboratorManagement'
 import api from '../services/api'
 import { ensureHtmlFormat } from '../utils/textConverter'
 
@@ -31,6 +32,8 @@ export function DocumentDetailPage() {
   const [showTemplateSelect, setShowTemplateSelect] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [showVersionHistory, setShowVersionHistory] = useState(false)
+  const [showCollaborators, setShowCollaborators] = useState(false)
+  const [userPermission, setUserPermission] = useState<string | null>(null)
 
   useEffect(() => {
     if (id) {
@@ -45,6 +48,16 @@ export function DocumentDetailPage() {
     try {
       const doc = await documentService.getDocument(id!)
       setDocument(doc)
+      
+      // Extract user's permission from document data
+      // The backend includes collaborators field with user's permission
+      if (doc.collaborators && doc.collaborators.length > 0) {
+        setUserPermission(doc.collaborators[0].permission)
+      } else {
+        // If user is the creator, they have owner permission
+        setUserPermission('owner')
+      }
+      
       // Load existing draft if available
       if (doc.content) {
         // Handle both string and structured content formats
@@ -297,14 +310,27 @@ export function DocumentDetailPage() {
             <h1 className="text-3xl font-bold text-gray-900">{document.title}</h1>
             <p className="text-gray-600 mt-2">
               Created {new Date(document.createdAt).toLocaleDateString()}
+              {userPermission && (
+                <span className="ml-3 px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">
+                  {userPermission}
+                </span>
+              )}
             </p>
           </div>
-          <button
-            onClick={() => setShowTemplateSelect(!showTemplateSelect)}
-            className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
-          >
-            📋 {document.templateId ? 'Change Template' : 'Apply Template'}
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowCollaborators(!showCollaborators)}
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+            >
+              👥 Manage Collaborators
+            </button>
+            <button
+              onClick={() => setShowTemplateSelect(!showTemplateSelect)}
+              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+            >
+              📋 {document.templateId ? 'Change Template' : 'Apply Template'}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -351,6 +377,11 @@ export function DocumentDetailPage() {
             Cancel
           </button>
         </div>
+      )}
+
+      {/* Collaborator Management */}
+      {showCollaborators && (
+        <CollaboratorManagement documentId={id!} userPermission={userPermission} />
       )}
 
       {/* PDF Upload Section */}

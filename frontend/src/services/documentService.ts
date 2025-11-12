@@ -8,6 +8,9 @@ export interface Document {
   templateId?: string | null
   createdAt: string
   createdBy: any
+  collaborators?: Array<{
+    permission: string
+  }>
   _count?: {
     pdfs: number
     facts: number

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import documentService, { Document } from '../services/documentService'
+import { InvitationList } from '../components/InvitationList'
 
 export function DocumentsPage() {
   const [documents, setDocuments] = useState<Document[]>([])
@@ -54,6 +55,9 @@ export function DocumentsPage() {
           + New Document
         </button>
       </div>
+
+      {/* Pending Invitations */}
+      <InvitationList />
 
       {documents.length === 0 ? (
         <div className="text-center py-12 bg-white rounded-lg shadow">
