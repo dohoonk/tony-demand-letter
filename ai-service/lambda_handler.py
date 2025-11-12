@@ -195,24 +195,25 @@ def handle_generate_draft(payload: Dict[str, Any]) -> Dict[str, Any]:
         }
 
 
+# FastAPI app for local development
+from fastapi import FastAPI, Body
+
+app = FastAPI(title='Demand Letter AI Service')
+
+@app.get('/health')
+def health_check():
+    return {
+        'status': 'ok',
+        'service': 'ai-service',
+    }
+
+@app.post('/invoke')
+def invoke(event: Dict[str, Any] = Body(...)):
+    return lambda_handler(event)
+
 # Local development server
 if __name__ == '__main__':
-    from fastapi import FastAPI
     import uvicorn
-    
-    app = FastAPI(title='Demand Letter AI Service')
-    
-    @app.get('/health')
-    def health_check():
-        return {
-            'status': 'ok',
-            'service': 'ai-service',
-        }
-    
-    @app.post('/invoke')
-    def invoke(event: Dict[str, Any]):
-        return lambda_handler(event)
-    
     port = int(os.getenv('PORT', 8000))
     print(f'🤖 AI Service running on http://localhost:{port}')
     uvicorn.run(app, host='0.0.0.0', port=port)
