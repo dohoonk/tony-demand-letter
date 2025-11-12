@@ -3,7 +3,8 @@ import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
 import TextAlign from '@tiptap/extension-text-align'
 import Placeholder from '@tiptap/extension-placeholder'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
+import { ensureHtmlFormat } from '../utils/textConverter'
 
 interface RichTextEditorProps {
   content: string
@@ -12,6 +13,9 @@ interface RichTextEditorProps {
 }
 
 export function RichTextEditor({ content, onChange, placeholder }: RichTextEditorProps) {
+  // Convert plain text to HTML if needed
+  const htmlContent = useMemo(() => ensureHtmlFormat(content), [content])
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -27,7 +31,7 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
         placeholder: placeholder || 'Start typing...',
       }),
     ],
-    content,
+    content: htmlContent,
     onUpdate: ({ editor }) => {
       const html = editor.getHTML()
       onChange(html)
@@ -41,12 +45,12 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
 
   // Update editor content when prop changes (for collaborative editing)
   useEffect(() => {
-    if (editor && content !== editor.getHTML()) {
+    if (editor && htmlContent !== editor.getHTML()) {
       const { from, to } = editor.state.selection
-      editor.commands.setContent(content, false)
+      editor.commands.setContent(htmlContent, false)
       editor.commands.setTextSelection({ from, to })
     }
-  }, [content, editor])
+  }, [htmlContent, editor])
 
   if (!editor) {
     return null
