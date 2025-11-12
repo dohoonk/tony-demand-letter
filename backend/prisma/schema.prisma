@@ -8,23 +8,25 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(uuid())
-  email         String   @unique
-  passwordHash  String   @map("password_hash")
-  firstName     String?  @map("first_name")
-  lastName      String?  @map("last_name")
-  role          String   @default("attorney") // attorney, paralegal, viewer
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  firstName    String?  @map("first_name")
+  lastName     String?  @map("last_name")
+  role         String   @default("attorney") // attorney, paralegal, viewer
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   // Relations
-  documentsCreated   Document[]        @relation("DocumentCreator")
-  pdfsUploaded       Pdf[]             @relation("PdfUploader")
-  factsReviewed      Fact[]            @relation("FactReviewer")
-  templatesCreated   Template[]        @relation("TemplateCreator")
-  paragraphsCreated  ParagraphModule[] @relation("ParagraphCreator")
-  versionsCreated    DocumentVersion[] @relation("VersionCreator")
-  auditLogs          AuditLog[]
+  documentsCreated  Document[]             @relation("DocumentCreator")
+  pdfsUploaded      Pdf[]                  @relation("PdfUploader")
+  factsReviewed     Fact[]                 @relation("FactReviewer")
+  templatesCreated  Template[]             @relation("TemplateCreator")
+  paragraphsCreated ParagraphModule[]      @relation("ParagraphCreator")
+  versionsCreated   DocumentVersion[]      @relation("VersionCreator")
+  collaborations    DocumentCollaborator[] @relation("Collaborator")
+  invitationsSent   DocumentCollaborator[] @relation("Inviter")
+  auditLogs         AuditLog[]
 
   @@map("users")
 }
@@ -35,18 +37,19 @@ model Document {
   createdById String   @map("created_by")
   templateId  String?  @map("template_id")
   status      String   @default("draft") // draft, in_review, finalized
-  content     Json?    // Y.js document state or rich text
-  metadata    Json?    // Case details, variables
+  content     Json? // Y.js document state or rich text
+  metadata    Json? // Case details, variables
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  createdBy User              @relation("DocumentCreator", fields: [createdById], references: [id])
-  template  Template?         @relation(fields: [templateId], references: [id])
-  pdfs      Pdf[]
-  facts     Fact[]
-  versions  DocumentVersion[]
-  auditLogs AuditLog[]
+  createdBy     User                   @relation("DocumentCreator", fields: [createdById], references: [id])
+  template      Template?              @relation(fields: [templateId], references: [id])
+  pdfs          Pdf[]
+  facts         Fact[]
+  versions      DocumentVersion[]
+  collaborators DocumentCollaborator[]
+  auditLogs     AuditLog[]
 
   @@index([createdById])
   @@index([status])
@@ -79,7 +82,7 @@ model Fact {
   documentId   String    @map("document_id")
   pdfId        String?   @map("pdf_id")
   factText     String    @map("fact_text") @db.Text
-  citation     String?   // "police_report.pdf, page 3"
+  citation     String? // "police_report.pdf, page 3"
   pageNumber   Int?      @map("page_number")
   status       String    @default("pending") // pending, approved, rejected, edited
   originalText String?   @map("original_text") @db.Text
@@ -110,9 +113,9 @@ model Template {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  createdBy         User              @relation("TemplateCreator", fields: [createdById], references: [id])
-  documents         Document[]
-  paragraphModules  ParagraphModule[]
+  createdBy        User              @relation("TemplateCreator", fields: [createdById], references: [id])
+  documents        Document[]
+  paragraphModules ParagraphModule[]
 
   @@map("templates")
 }
@@ -152,6 +155,30 @@ model DocumentVersion {
   @@map("document_versions")
 }
 
+model DocumentCollaborator {
+  id          String    @id @default(uuid())
+  documentId  String    @map("document_id")
+  userId      String    @map("user_id")
+  permission  String    @default("viewer") // owner, editor, viewer
+  status      String    @default("pending") // pending, accepted, rejected
+  invitedBy   String?   @map("invited_by")
+  invitedAt   DateTime  @default(now()) @map("invited_at")
+  respondedAt DateTime? @map("responded_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user     User     @relation("Collaborator", fields: [userId], references: [id], onDelete: Cascade)
+  inviter  User?    @relation("Inviter", fields: [invitedBy], references: [id])
+
+  @@unique([documentId, userId]) // One permission per user per document
+  @@index([documentId])
+  @@index([userId])
+  @@index([status])
+  @@map("document_collaborators")
+}
+
 model AuditLog {
   id         String   @id @default(uuid())
   userId     String?  @map("user_id")
@@ -170,4 +197,3 @@ model AuditLog {
   @@index([createdAt(sort: Desc)])
   @@map("audit_logs")
 }
-

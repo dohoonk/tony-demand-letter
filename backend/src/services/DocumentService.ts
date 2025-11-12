@@ -33,6 +33,17 @@ class DocumentService {
       },
     })
 
+    // Automatically create owner collaborator entry for the creator
+    await prisma.documentCollaborator.create({
+      data: {
+        documentId: document.id,
+        userId: input.userId,
+        permission: 'owner',
+        status: 'accepted',
+        invitedBy: input.userId,
+      },
+    })
+
     return document
   }
 
@@ -80,7 +91,14 @@ class DocumentService {
       where: {
         OR: [
           { createdById: userId },
-          // In future: add shared documents logic
+          {
+            collaborators: {
+              some: {
+                userId: userId,
+                status: 'accepted',
+              },
+            },
+          },
         ],
       },
       include: {
@@ -90,6 +108,16 @@ class DocumentService {
             firstName: true,
             lastName: true,
           },
+        },
+        collaborators: {
+          where: {
+            userId: userId,
+            status: 'accepted',
+          },
+          select: {
+            permission: true,
+          },
+          take: 1,
         },
         _count: {
           select: {
