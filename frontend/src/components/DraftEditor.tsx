@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import socketService from '../services/socketService'
-import useAuth from '../hooks/useAuth'
+import { useAuth } from '../hooks/useAuth'
 import { RichTextEditor } from './RichTextEditor'
 
 interface DraftEditorProps {
