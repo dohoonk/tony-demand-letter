@@ -9,13 +9,16 @@ import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog'
 import { toast } from 'sonner'
-import { Plus, FileText, Calendar } from 'lucide-react'
+import { Plus, FileText, Calendar, Search, ArrowUpDown } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
 
 export function DocumentsPage() {
   const [documents, setDocuments] = useState<Document[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [showNewModal, setShowNewModal] = useState(false)
   const [newTitle, setNewTitle] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [sortBy, setSortBy] = useState<'date-desc' | 'date-asc' | 'title-asc' | 'title-desc'>('date-desc')
 
   useEffect(() => {
     console.log('[DocumentsPage] useEffect: mounting, calling loadDocuments()')
@@ -84,6 +87,34 @@ export function DocumentsPage() {
       {/* Pending Invitations */}
       <InvitationList />
 
+      {/* Search and Sort Controls */}
+      {documents.length > 0 && (
+        <div className="flex gap-4 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search documents..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+            <SelectTrigger className="w-[200px]">
+              <ArrowUpDown className="mr-2 h-4 w-4" />
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="date-desc">Newest First</SelectItem>
+              <SelectItem value="date-asc">Oldest First</SelectItem>
+              <SelectItem value="title-asc">Title A-Z</SelectItem>
+              <SelectItem value="title-desc">Title Z-A</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
       {documents.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
@@ -100,7 +131,29 @@ export function DocumentsPage() {
         </Card>
       ) : (
         <div className="grid gap-4">
-          {documents.map((doc) => (
+          {documents
+            .filter((doc) => {
+              const searchLower = searchQuery.toLowerCase()
+              return (
+                doc.title.toLowerCase().includes(searchLower) ||
+                doc.status.toLowerCase().includes(searchLower)
+              )
+            })
+            .sort((a, b) => {
+              switch (sortBy) {
+                case 'date-desc':
+                  return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                case 'date-asc':
+                  return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+                case 'title-asc':
+                  return a.title.localeCompare(b.title)
+                case 'title-desc':
+                  return b.title.localeCompare(a.title)
+                default:
+                  return 0
+              }
+            })
+            .map((doc) => (
             <Link key={doc.id} to={`/documents/${doc.id}`}>
               <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                 <CardHeader>
@@ -131,6 +184,23 @@ export function DocumentsPage() {
               </Card>
             </Link>
           ))}
+          {documents.filter((doc) => {
+            const searchLower = searchQuery.toLowerCase()
+            return (
+              doc.title.toLowerCase().includes(searchLower) ||
+              doc.status.toLowerCase().includes(searchLower)
+            )
+          }).length === 0 && (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-16">
+                <Search className="h-16 w-16 text-muted-foreground mb-4" />
+                <CardTitle className="mb-2">No documents found</CardTitle>
+                <CardDescription className="text-center max-w-sm">
+                  No documents match your search for "{searchQuery}"
+                </CardDescription>
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
 
