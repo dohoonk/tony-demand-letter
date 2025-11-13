@@ -10,9 +10,10 @@ import { ensureHtmlFormat } from '../utils/textConverter'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { Skeleton } from '../components/ui/skeleton'
+import { Input } from '../components/ui/input'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../components/ui/alert-dialog'
 import { toast } from 'sonner'
-import { ArrowLeft, Upload, FileText, Sparkles, Save, Download, Edit, History, Users, FileCheck, X, CheckCircle, XCircle, Layout, MoreVertical, RotateCcw } from 'lucide-react'
+import { ArrowLeft, Upload, FileText, Sparkles, Save, Download, Edit, History, Users, FileCheck, X, CheckCircle, XCircle, Layout, MoreVertical, RotateCcw, Search } from 'lucide-react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../components/ui/dropdown-menu'
 
 interface Fact {
@@ -37,6 +38,7 @@ export function DocumentDetailPage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [draft, setDraft] = useState<string | null>(null)
   const [showTemplateSelect, setShowTemplateSelect] = useState(false)
+  const [templateSearch, setTemplateSearch] = useState('')
   const [isEditing, setIsEditing] = useState(false)
   const [showVersionHistory, setShowVersionHistory] = useState(false)
   const [showCollaborators, setShowCollaborators] = useState(false)
@@ -430,33 +432,72 @@ export function DocumentDetailPage() {
                 No templates available. Create a template first.
               </p>
             ) : (
-              <div className="space-y-3">
-                {templates.map((template) => (
-                  <div
-                    key={template.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent transition-colors"
-                  >
-                    <div>
-                      <h3 className="font-medium">{template.name}</h3>
-                      {template.description && (
-                        <p className="text-sm text-muted-foreground mt-1">{template.description}</p>
-                      )}
-                      {template.category && (
-                        <span className="inline-block mt-2 px-2 py-1 text-xs bg-primary/10 text-primary rounded-md">
-                          {template.category}
-                        </span>
-                      )}
-                    </div>
-                    <Button onClick={() => handleApplyTemplate(template.id)}>
-                      Apply
-                    </Button>
-                  </div>
-                ))}
-              </div>
+              <>
+                {/* Search Input */}
+                <div className="relative mb-4">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Search templates..."
+                    value={templateSearch}
+                    onChange={(e) => setTemplateSearch(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+
+                {/* Template List */}
+                <div className="space-y-3">
+                  {templates
+                    .filter((template) => {
+                      const searchLower = templateSearch.toLowerCase()
+                      return (
+                        template.name.toLowerCase().includes(searchLower) ||
+                        template.description?.toLowerCase().includes(searchLower) ||
+                        template.category?.toLowerCase().includes(searchLower)
+                      )
+                    })
+                    .map((template) => (
+                      <div
+                        key={template.id}
+                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent transition-colors"
+                      >
+                        <div>
+                          <h3 className="font-medium">{template.name}</h3>
+                          {template.description && (
+                            <p className="text-sm text-muted-foreground mt-1">{template.description}</p>
+                          )}
+                          {template.category && (
+                            <span className="inline-block mt-2 px-2 py-1 text-xs bg-primary/10 text-primary rounded-md">
+                              {template.category}
+                            </span>
+                          )}
+                        </div>
+                        <Button onClick={() => handleApplyTemplate(template.id)}>
+                          Apply
+                        </Button>
+                      </div>
+                    ))}
+                  {templates.filter((template) => {
+                    const searchLower = templateSearch.toLowerCase()
+                    return (
+                      template.name.toLowerCase().includes(searchLower) ||
+                      template.description?.toLowerCase().includes(searchLower) ||
+                      template.category?.toLowerCase().includes(searchLower)
+                    )
+                  }).length === 0 && (
+                    <p className="text-muted-foreground text-center py-8">
+                      No templates found matching "{templateSearch}"
+                    </p>
+                  )}
+                </div>
+              </>
             )}
             <Button
               variant="ghost"
-              onClick={() => setShowTemplateSelect(false)}
+              onClick={() => {
+                setShowTemplateSelect(false)
+                setTemplateSearch('') // Clear search when closing
+              }}
               className="mt-4"
             >
               Cancel
