@@ -13,7 +13,7 @@ s3_client = boto3.client(
     aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
 )
 
-BUCKET_NAME = os.getenv('S3_BUCKET_NAME', 'parent-onboarding-insurance-cards-tony')
+BUCKET_NAME = os.getenv('S3_BUCKET_NAME', 'demand-letters-dev')
 
 
 def download_from_s3(s3_key: str) -> Optional[bytes]:

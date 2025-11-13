@@ -18,7 +18,7 @@ const s3Client = isLocalDev
       },
     })
 
-export const BUCKET_NAME = process.env.S3_BUCKET_NAME || 'parent-onboarding-insurance-cards-tony'
+export const BUCKET_NAME = process.env.S3_BUCKET_NAME || 'demand-letters-dev'
 const LOCAL_STORAGE_PATH = path.join(process.cwd(), 'uploads')
 
 // Ensure local storage directory exists
