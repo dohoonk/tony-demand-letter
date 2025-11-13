@@ -93,7 +93,7 @@ class VersionService {
     const document = await prisma.document.update({
       where: { id: documentId },
       data: {
-        content: version.content,
+        content: version.content as any,
         updatedAt: new Date(),
       },
     })

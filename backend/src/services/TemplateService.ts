@@ -4,7 +4,7 @@ export interface CreateTemplateInput {
   name: string
   description?: string
   category?: string
-  structure: any
+  structure?: any
   variables?: any
   userId: string
 }
