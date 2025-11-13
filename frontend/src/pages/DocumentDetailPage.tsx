@@ -12,7 +12,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Skeleton } from '../components/ui/skeleton'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../components/ui/alert-dialog'
 import { toast } from 'sonner'
-import { ArrowLeft, Upload, FileText, Sparkles, Save, Download, Edit, History, Users, FileCheck, X, CheckCircle, XCircle, Layout } from 'lucide-react'
+import { ArrowLeft, Upload, FileText, Sparkles, Save, Download, Edit, History, Users, FileCheck, X, CheckCircle, XCircle, Layout, MoreVertical, RotateCcw } from 'lucide-react'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../components/ui/dropdown-menu'
 
 interface Fact {
   id: string
@@ -157,8 +158,10 @@ export function DocumentDetailPage() {
     try {
       await api.post(`/documents/facts/${factId}/approve`)
       await loadFacts()
+      toast.success('Fact approved')
     } catch (error) {
       console.error('Error approving fact:', error)
+      toast.error('Failed to approve fact')
     }
   }
 
@@ -166,8 +169,10 @@ export function DocumentDetailPage() {
     try {
       await api.post(`/documents/facts/${factId}/reject`)
       await loadFacts()
+      toast.success('Fact rejected')
     } catch (error) {
       console.error('Error rejecting fact:', error)
+      toast.error('Failed to reject fact')
     }
   }
 
@@ -594,7 +599,7 @@ export function DocumentDetailPage() {
                   >
                     <div className="flex justify-between items-start mb-2">
                       <p className="flex-1">{fact.factText}</p>
-                      <div className="flex gap-2 ml-4">
+                      <div className="flex gap-2 ml-4 items-center">
                         {fact.status === 'pending' && (
                           <>
                             <Button
@@ -617,16 +622,46 @@ export function DocumentDetailPage() {
                           </>
                         )}
                         {fact.status === 'approved' && (
-                          <span className="px-3 py-1 text-sm bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 rounded-md flex items-center gap-1">
-                            <CheckCircle className="h-3 w-3" />
-                            Approved
-                          </span>
+                          <>
+                            <span className="px-3 py-1 text-sm bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 rounded-md flex items-center gap-1">
+                              <CheckCircle className="h-3 w-3" />
+                              Approved
+                            </span>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleRejectFact(fact.id)}>
+                                  <XCircle className="mr-2 h-4 w-4" />
+                                  Change to Rejected
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </>
                         )}
                         {fact.status === 'rejected' && (
-                          <span className="px-3 py-1 text-sm bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100 rounded-md flex items-center gap-1">
-                            <XCircle className="h-3 w-3" />
-                            Rejected
-                          </span>
+                          <>
+                            <span className="px-3 py-1 text-sm bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100 rounded-md flex items-center gap-1">
+                              <XCircle className="h-3 w-3" />
+                              Rejected
+                            </span>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleApproveFact(fact.id)}>
+                                  <CheckCircle className="mr-2 h-4 w-4" />
+                                  Change to Approved
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </>
                         )}
                       </div>
                     </div>
