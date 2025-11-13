@@ -341,7 +341,7 @@ export function DocumentDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="container max-w-7xl mx-auto px-4 py-8">
+      <div className="w-full px-8 py-8">
         <Skeleton className="h-8 w-32 mb-8" />
         <div className="space-y-6">
           <Skeleton className="h-24 w-full" />
@@ -354,24 +354,26 @@ export function DocumentDetailPage() {
 
   if (!document) {
     return (
-      <div className="container max-w-7xl mx-auto px-4 py-8">
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <FileText className="h-16 w-16 text-muted-foreground mb-4" />
-            <CardTitle className="mb-2">Document not found</CardTitle>
-            <CardDescription>The document you're looking for doesn't exist or you don't have access to it.</CardDescription>
-            <Button className="mt-6" onClick={() => navigate('/documents')}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Documents
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="w-full px-8 py-8">
+        <div className="max-w-4xl mx-auto">
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-16">
+              <FileText className="h-16 w-16 text-muted-foreground mb-4" />
+              <CardTitle className="mb-2">Document not found</CardTitle>
+              <CardDescription>The document you're looking for doesn't exist or you don't have access to it.</CardDescription>
+              <Button className="mt-6" onClick={() => navigate('/documents')}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Documents
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="container max-w-7xl mx-auto px-4 py-8">
+    <div className="w-full px-8 py-8">
       {/* Header */}
       <div className="mb-8">
         <Button
