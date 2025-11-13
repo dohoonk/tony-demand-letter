@@ -341,7 +341,7 @@ export function DocumentDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="w-full px-8 py-8">
+      <div className="w-full px-4 py-8">
         <Skeleton className="h-8 w-32 mb-8" />
         <div className="space-y-6">
           <Skeleton className="h-24 w-full" />
@@ -354,7 +354,7 @@ export function DocumentDetailPage() {
 
   if (!document) {
     return (
-      <div className="w-full px-8 py-8">
+      <div className="w-full px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-16">
@@ -373,7 +373,7 @@ export function DocumentDetailPage() {
   }
 
   return (
-    <div className="w-full px-8 py-8">
+    <div className="w-full px-4 py-8">
       {/* Header */}
       <div className="mb-8">
         <Button

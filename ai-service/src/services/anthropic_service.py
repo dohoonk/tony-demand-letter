@@ -137,7 +137,12 @@ IMPORTANT - FORMATTING REQUIREMENTS:
 - Use <strong> tags for bold text (NOT markdown ** syntax)
 - Use <ul> and <li> for bullet lists
 - Use <br> for line breaks within sections
+- Use <div> tags with class attributes for semantic sections (e.g., class="letterhead", class="section")
 - Do NOT use markdown formatting like ** for bold or # for headings
+- Do NOT include <style> tags or any CSS styling
+- Do NOT include max-width, margin, or any layout styles
+- Do NOT wrap the content in <html>, <head>, or <body> tags
+- Output ONLY the semantic HTML content
 
 Write a complete demand letter with the firm's actual information (not placeholders). Make it persuasive and professional."""
 

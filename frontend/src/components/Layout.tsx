@@ -19,7 +19,7 @@ export function Layout() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container max-w-7xl mx-auto flex h-16 items-center justify-between px-4">
+        <div className="w-full flex h-16 items-center justify-between px-4">
           <div
             onClick={() => navigate('/documents')}
             className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
