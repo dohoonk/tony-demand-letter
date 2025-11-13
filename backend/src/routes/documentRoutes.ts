@@ -5,7 +5,7 @@ import exportController from '../controllers/exportController'
 import versionController from '../controllers/versionController'
 import { authenticate } from '../middleware/authenticate'
 import { upload } from '../middleware/upload'
-import { checkDocumentAccess } from '../middleware/permissions'
+import { checkDocumentAccess, checkFactAccess } from '../middleware/permissions'
 
 const router = Router()
 
@@ -27,10 +27,10 @@ router.delete('/pdfs/:id', checkDocumentAccess('editor'), documentController.del
 // Fact routes
 router.post('/:documentId/facts/extract', checkDocumentAccess('editor'), factController.extractFacts.bind(factController))
 router.get('/:documentId/facts', checkDocumentAccess('viewer'), factController.listFacts.bind(factController))
-router.patch('/facts/:id', checkDocumentAccess('editor'), factController.updateFact.bind(factController))
-router.post('/facts/:id/approve', checkDocumentAccess('editor'), factController.approveFact.bind(factController))
-router.post('/facts/:id/reject', checkDocumentAccess('editor'), factController.rejectFact.bind(factController))
-router.delete('/facts/:id', checkDocumentAccess('editor'), factController.deleteFact.bind(factController))
+router.patch('/facts/:id', checkFactAccess('editor'), factController.updateFact.bind(factController))
+router.post('/facts/:id/approve', checkFactAccess('editor'), factController.approveFact.bind(factController))
+router.post('/facts/:id/reject', checkFactAccess('editor'), factController.rejectFact.bind(factController))
+router.delete('/facts/:id', checkFactAccess('editor'), factController.deleteFact.bind(factController))
 
 // Draft generation
 router.post('/:documentId/generate', checkDocumentAccess('editor'), factController.generateDraft.bind(factController))

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import collaboratorService, { Collaborator, CollaboratorList } from '../services/collaboratorService'
+import collaboratorService, { CollaboratorList } from '../services/collaboratorService'
 
 interface CollaboratorManagementProps {
   documentId: string

@@ -194,6 +194,8 @@ class DocumentController {
       // Trigger text extraction in background
       const aiServiceUrl = process.env.AI_SERVICE_URL || 'http://localhost:8000'
       
+      console.log(`[uploadPdf] Triggering text extraction for PDF ${pdf.id} at ${aiServiceUrl}/invoke`)
+      
       // Don't await - fire and forget
       axios.post(`${aiServiceUrl}/invoke`, {
         operation: 'extract_text',
@@ -201,8 +203,14 @@ class DocumentController {
           pdfId: pdf.id,
           s3Key: pdf.s3Key,
         },
+      }).then(() => {
+        console.log(`[uploadPdf] Text extraction triggered successfully for PDF ${pdf.id}`)
       }).catch((error) => {
-        console.error('Error triggering text extraction:', error.message)
+        console.error(`[uploadPdf] Error triggering text extraction for PDF ${pdf.id}:`, error.message)
+        if (error.response) {
+          console.error(`[uploadPdf] Response status: ${error.response.status}`)
+          console.error(`[uploadPdf] Response data:`, error.response.data)
+        }
       })
 
       res.status(201).json({

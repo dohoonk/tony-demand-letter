@@ -13,7 +13,7 @@ import { Skeleton } from '../components/ui/skeleton'
 import { Input } from '../components/ui/input'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../components/ui/alert-dialog'
 import { toast } from 'sonner'
-import { ArrowLeft, Upload, FileText, Sparkles, Save, Download, Edit, History, Users, FileCheck, X, CheckCircle, XCircle, Layout, MoreVertical, RotateCcw, Search } from 'lucide-react'
+import { ArrowLeft, Upload, FileText, Sparkles, Save, Download, Edit, History, Users, FileCheck, X, CheckCircle, XCircle, Layout, MoreVertical, Search } from 'lucide-react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../components/ui/dropdown-menu'
 
 interface Fact {
@@ -115,6 +115,8 @@ export function DocumentDetailPage() {
   const loadFacts = async () => {
     try {
       const response = await api.get(`/documents/${id}/facts`)
+      console.log('[loadFacts] Raw response:', response.data)
+      console.log('[loadFacts] Facts array:', response.data.data)
       setFacts(response.data.data)
     } catch (error) {
       console.error('Error loading facts:', error)
@@ -145,7 +147,8 @@ export function DocumentDetailPage() {
   const handleExtractFacts = async () => {
     setIsExtractingFacts(true)
     try {
-      await api.post(`/documents/${id}/facts/extract`)
+      const response = await api.post(`/documents/${id}/facts/extract`)
+      console.log('[handleExtractFacts] Extraction response:', response.data)
       await loadFacts()
       toast.success('Facts extracted successfully!')
     } catch (error) {

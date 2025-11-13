@@ -9,6 +9,12 @@ import sys
 from typing import Dict, Any
 from dotenv import load_dotenv
 
+# Load environment variables from .env file
+load_dotenv()
+
+# Debug: Print S3 bucket name
+print(f"[DEBUG] S3_BUCKET_NAME from env: {os.getenv('S3_BUCKET_NAME', 'NOT_SET')}")
+
 # Add src directory to path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
@@ -30,6 +36,9 @@ def lambda_handler(event: Dict[str, Any], context: Any = None) -> Dict[str, Any]
     """
     
     try:
+        print(f'[lambda_handler] Received request - Operation: {event.get("operation")}')
+        print(f'[lambda_handler] Payload keys: {list(event.get("payload", {}).keys())}')
+        
         # Parse request
         operation = event.get('operation')
         payload = event.get('payload', {})

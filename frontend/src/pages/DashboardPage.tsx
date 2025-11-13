@@ -3,7 +3,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useNavigate } from 'react-router-dom'
 
 export function DashboardPage() {
-  const { user, logout, fetchUser } = useAuth()
+  const { fetchUser } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
