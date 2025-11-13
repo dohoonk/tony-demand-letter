@@ -130,6 +130,15 @@ INSTRUCTIONS:
 6. Include a reasonable deadline for response (typically 30 days)
 7. Use proper legal letter format
 
+IMPORTANT - FORMATTING REQUIREMENTS:
+- Output the letter in HTML format
+- Use <h1>, <h2>, <h3> tags for headings (e.g., "III. DAMAGES", "Medical Expenses")
+- Use <p> tags for paragraphs
+- Use <strong> tags for bold text (NOT markdown ** syntax)
+- Use <ul> and <li> for bullet lists
+- Use <br> for line breaks within sections
+- Do NOT use markdown formatting like ** for bold or # for headings
+
 Write a complete demand letter with the firm's actual information (not placeholders). Make it persuasive and professional."""
 
     try:
