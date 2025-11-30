@@ -435,30 +435,6 @@ All methods include: purpose, parameters, return types, flow explanations, and p
 
 ---
 
-## 🎤 Interview Talking Points
-
-### Architecture Decision
-**Q: Why separate the AI service?**
-
-**A**: "Pragmatic separation for language specialization. Python has a better PDF parsing ecosystem with pypdf, and it keeps the door open for future ML enhancements. That said, it could have been all Node.js - the Anthropic SDK works in both languages. The main trade-off is maintaining two codebases vs. the flexibility Python provides."
-
-### Technology Choices
-**Q: Why Python for AI if Anthropic works in Node.js?**
-
-**A**: "Honest answer: It's primarily for PDF parsing. pypdf is simpler than Node.js alternatives for basic text extraction. We're not using advanced features like pdfplumber's table extraction - just plain text. The real benefit is potential future flexibility for ML libraries, not current capabilities. It adds complexity (separate codebase, type duplication) but keeps options open."
-
-### Scalability
-**Q: What would you change for production?**
-
-**A**: "Three main areas:
-1. **Observability**: Add structured logging, APM, and error tracking - currently minimal
-2. **Scalability**: Add Redis pub/sub to scale Socket.io across multiple instances
-3. **Security**: Rate limiting, input validation, and proper secrets management
-
-The architecture is intentionally simple for MVP. It's not Netflix-scale microservices (overkill) but also not a monolith (AI separation makes sense). It's right-sized for 2-6 concurrent users per document."
-
----
-
 ## 📝 License
 
 Proprietary - Steno © 2025
