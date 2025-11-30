@@ -52,11 +52,29 @@ export function isHtmlContent(content: string): boolean {
 }
 
 /**
+ * Strips markdown code fences from content
+ */
+function stripCodeFences(content: string): string {
+  // Remove opening code fence (```html, ```javascript, etc.)
+  let cleaned = content.replace(/^```\w*\n?/m, '')
+  // Remove closing code fence
+  cleaned = cleaned.replace(/\n?```\s*$/m, '')
+  return cleaned.trim()
+}
+
+/**
  * Converts content to HTML if it's plain text, otherwise returns as-is
  */
 export function ensureHtmlFormat(content: string): string {
   if (!content) return '<p></p>'
-  if (isHtmlContent(content)) return content
-  return plainTextToHtml(content)
+  
+  // Strip markdown code fences if present
+  const cleanedContent = stripCodeFences(content)
+  
+  // Check if it's HTML content
+  if (isHtmlContent(cleanedContent)) return cleanedContent
+  
+  // Otherwise convert plain text to HTML
+  return plainTextToHtml(cleanedContent)
 }
 
