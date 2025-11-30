@@ -37,6 +37,7 @@ router.post('/:documentId/generate', checkDocumentAccess('editor'), factControll
 
 // Export
 router.get('/:documentId/export/docx', checkDocumentAccess('viewer'), exportController.exportDocx.bind(exportController))
+router.get('/:documentId/export/pdf', checkDocumentAccess('viewer'), exportController.exportPdf.bind(exportController))
 
 // Version history
 router.post('/:documentId/versions', checkDocumentAccess('editor'), versionController.createVersion.bind(versionController))
