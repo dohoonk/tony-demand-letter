@@ -421,7 +421,6 @@ See [`PRODUCTION_READINESS.md`](PRODUCTION_READINESS.md) for complete roadmap.
 ### Project Documentation
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - Detailed architecture, data flows, design decisions
 - **[PRODUCTION_READINESS.md](PRODUCTION_READINESS.md)** - Production improvement roadmap
-- **[INTERVIEW_GUIDE.md](INTERVIEW_GUIDE.md)** - Interview prep, talking points, Q&A
 - **[HEROKU_DEPLOYMENT.md](HEROKU_DEPLOYMENT.md)** - Deployment guide
 - **[memory-bank/](memory-bank/)** - Project context and progress
 
